@@ -1,0 +1,61 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: pixel-vpn-mysql
+    restart: unless-stopped
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: pixelvpn
+      MYSQL_USER: pixelvpn
+      MYSQL_PASSWORD: pixelvpn
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -proot --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - vpn
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: pixel-vpn-phpmyadmin
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: root
+      UPLOAD_LIMIT: 128M
+    ports:
+      - "8081:80"
+    networks:
+      - vpn
+
+  xray:
+    image: ghcr.io/xtls/xray-core:latest
+    container_name: pixel-vpn-xray
+    restart: unless-stopped
+    ports:
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./xray/config.json:/etc/xray/config.json:ro
+    networks:
+      - vpn
+
+networks:
+  vpn:
+    driver: bridge
+
+volumes:
+  mysql-data:

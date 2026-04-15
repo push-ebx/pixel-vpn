@@ -1,0 +1,23 @@
+[package]
+name = "pixel-vpn"
+version = "0.1.0"
+description = "Modern VPN client powered by Xray-core"
+authors = ["Pixel VPN"]
+edition = "2021"
+
+[lib]
+name = "pixel_vpn_lib"
+crate-type = ["lib", "cdylib", "staticlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-shell = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+log = "0.4"
+env_logger = "0.11"
+dirs = "6"

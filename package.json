@@ -1,0 +1,26 @@
+{
+  "name": "pixel-vpn",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Modern VPN client powered by Xray-core",
+  "scripts": {
+    "dev": "pnpm --filter @pixel-vpn/client dev",
+    "dev:server": "pnpm --filter @pixel-vpn/server dev",
+    "dev:all": "pnpm -r --parallel --filter @pixel-vpn/client --filter @pixel-vpn/server dev",
+    "build": "pnpm --filter @pixel-vpn/client build",
+    "build:server": "pnpm --filter @pixel-vpn/server build",
+    "tauri": "pnpm --filter @pixel-vpn/client tauri",
+    "android:init": "pnpm --filter @pixel-vpn/client tauri android init",
+    "android:dev": "pnpm --filter @pixel-vpn/client tauri android dev",
+    "android:build": "pnpm --filter @pixel-vpn/client tauri android build",
+    "prisma:generate": "pnpm --filter @pixel-vpn/server prisma:generate",
+    "prisma:push": "pnpm --filter @pixel-vpn/server prisma:push",
+    "prisma:migrate": "pnpm --filter @pixel-vpn/server prisma:migrate",
+    "prisma:seed": "pnpm --filter @pixel-vpn/server prisma:seed"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
+}

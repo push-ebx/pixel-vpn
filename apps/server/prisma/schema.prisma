@@ -1,0 +1,86 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  EXPIRED
+  CANCELED
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  CANCELED
+}
+
+model User {
+  id            String          @id @default(cuid())
+  email         String          @unique @db.VarChar(191)
+  passwordHash  String          @db.VarChar(255)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  paymentIntents PaymentIntent[]
+  subscription  Subscription?
+}
+
+model Plan {
+  id             String          @id @default(cuid())
+  code           String          @unique @db.VarChar(64)
+  name           String          @db.VarChar(120)
+  description    String?         @db.VarChar(255)
+  priceRub       Int
+  durationDays   Int
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  paymentIntents PaymentIntent[]
+  subscriptions  Subscription[]
+}
+
+model PaymentIntent {
+  id           String        @id @default(cuid())
+  userId       String
+  planId       String
+  amountRub    Int
+  provider     String        @default("yookassa") @db.VarChar(32)
+  status       PaymentStatus @default(PENDING)
+  externalId   String?       @unique @db.VarChar(191)
+  sbpDeepLink  String?       @db.Text
+  sbpQrDataUrl String?       @db.LongText
+  paidAt       DateTime?
+  expiresAt    DateTime
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan Plan @relation(fields: [planId], references: [id], onDelete: Restrict)
+
+  @@index([userId, status])
+  @@index([planId])
+  @@index([createdAt])
+}
+
+model Subscription {
+  id              String             @id @default(cuid())
+  userId          String             @unique
+  planId          String
+  paymentIntentId String?            @db.VarChar(191)
+  status          SubscriptionStatus @default(ACTIVE)
+  startsAt        DateTime           @default(now())
+  endsAt          DateTime
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan Plan @relation(fields: [planId], references: [id], onDelete: Restrict)
+
+  @@index([status, endsAt])
+}
