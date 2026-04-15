@@ -29,10 +29,29 @@ class VpnPlugin(private val activity: Activity) : Plugin(activity) {
 
     @Command
     fun startVpn(invoke: Invoke) {
+        val rawArgs = invoke.getRawArgs()
         val args = invoke.parseArgs(JSObject::class.java)
-        val configJson = args.getString("configJson")
+        Log.i(TAG, "startVpn raw args: $rawArgs")
+
+        var configJson: String? = args.getString("configJson")
+        if (configJson.isNullOrBlank()) {
+            configJson = args.getString("config_json")
+        }
+
+        if (configJson.isNullOrBlank() && rawArgs.isNotBlank()) {
+            try {
+                val rawObj = JSObject(rawArgs)
+                configJson = rawObj.getString("configJson")
+                if (configJson.isNullOrBlank()) {
+                    configJson = rawObj.getString("config_json")
+                }
+            } catch (_: Exception) {
+                // ignore raw json parse errors; handled below
+            }
+        }
 
         if (configJson.isNullOrEmpty()) {
+            Log.e(TAG, "startVpn called without configJson/config_json; rawArgs=$rawArgs")
             invoke.reject("configJson is required")
             return
         }

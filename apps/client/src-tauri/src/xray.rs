@@ -586,17 +586,18 @@ impl Drop for XrayManager {
 // ─── Android ────────────────────────────────────────────────────────
 
 #[cfg(target_os = "android")]
-use std::sync::mpsc;
-
-#[cfg(target_os = "android")]
 pub struct AndroidVpnBridge {
     running: bool,
+    config_json: Option<String>,
 }
 
 #[cfg(target_os = "android")]
 impl AndroidVpnBridge {
     pub fn new() -> Self {
-        Self { running: false }
+        Self {
+            running: false,
+            config_json: None,
+        }
     }
 
     pub fn start(
@@ -618,10 +619,7 @@ impl AndroidVpnBridge {
         );
         let config_json = serde_json::to_string(&config)?;
 
-        // Send config to Kotlin VpnService via the Tauri plugin channel.
-        // The actual call is made from commands.rs which has access to AppHandle.
-        // Store the config so it can be retrieved by the plugin.
-        std::env::set_var("PIXEL_VPN_CONFIG", &config_json);
+        self.config_json = Some(config_json);
 
         self.running = true;
         log::info!("Android VPN bridge: config prepared, waiting for plugin to start service");
@@ -630,7 +628,7 @@ impl AndroidVpnBridge {
 
     pub fn stop(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         self.running = false;
-        std::env::remove_var("PIXEL_VPN_CONFIG");
+        self.config_json = None;
         log::info!("Android VPN bridge: stopped");
         Ok(())
     }
@@ -640,7 +638,7 @@ impl AndroidVpnBridge {
     }
 
     pub fn take_config(&self) -> Option<String> {
-        std::env::var("PIXEL_VPN_CONFIG").ok()
+        self.config_json.clone()
     }
 }
 

@@ -4,6 +4,8 @@ use std::net::{TcpStream, ToSocketAddrs};
 use std::thread;
 use std::time::{Duration, Instant};
 use tauri::State;
+#[cfg(target_os = "android")]
+use tauri::Manager;
 use crate::server::ServerConfig;
 use crate::settings::{AppSettings, RoutingMode};
 #[cfg(not(target_os = "android"))]

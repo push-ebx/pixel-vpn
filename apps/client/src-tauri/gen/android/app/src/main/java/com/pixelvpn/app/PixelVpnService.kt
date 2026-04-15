@@ -4,7 +4,10 @@ import android.content.Intent
 import android.net.VpnService
 import android.os.ParcelFileDescriptor
 import android.util.Log
-import XrayCore.XrayCore
+import go.Seq
+import libv2ray.CoreCallbackHandler
+import libv2ray.CoreController
+import libv2ray.Libv2ray
 
 class PixelVpnService : VpnService() {
 
@@ -19,9 +22,11 @@ class PixelVpnService : VpnService() {
     }
 
     private var tunFd: ParcelFileDescriptor? = null
+    private var coreController: CoreController? = null
 
     override fun onCreate() {
         super.onCreate()
+        Seq.setContext(applicationContext)
         VpnNotification.createChannel(this)
     }
 
@@ -39,6 +44,9 @@ class PixelVpnService : VpnService() {
                     stopSelf()
                     return START_NOT_STICKY
                 }
+
+                // Foreground must start immediately after startForegroundService().
+                startForeground(VpnNotification.NOTIFICATION_ID, VpnNotification.build(this, false))
                 startVpn(configJson)
             }
             else -> {
@@ -51,12 +59,13 @@ class PixelVpnService : VpnService() {
 
     private fun startVpn(configJson: String) {
         try {
+            Log.i(TAG, "VPN start: building TUN")
+
             // Create TUN interface
             val builder = Builder()
                 .setSession("Pixel VPN")
-                .addAddress("10.0.0.2", 32)
+                .addAddress("10.0.0.1", 30)
                 .addRoute("0.0.0.0", 0)
-                .addRoute("::", 0)
                 .addDnsServer("1.1.1.1")
                 .addDnsServer("8.8.8.8")
                 .setMtu(1500)
@@ -79,13 +88,44 @@ class PixelVpnService : VpnService() {
             val fd = tunFd!!.fd
             Log.i(TAG, "TUN interface established, fd=$fd")
 
-            // Start xray-core via libXray with TUN fd and config
-            // AndroidLibXrayLite expects the config JSON and uses the SOCKS proxy internally
-            XrayCore.run(configJson)
+            // Start xray-core via AndroidLibXrayLite.
+            Log.i(TAG, "VPN start: initCoreEnv")
+            Seq.setContext(applicationContext)
+            Libv2ray.initCoreEnv(filesDir.absolutePath, cacheDir.absolutePath)
+            val callbackHandler = object : CoreCallbackHandler {
+                override fun onEmitStatus(l: Long, s: String?): Long {
+                    if (!s.isNullOrBlank()) {
+                        Log.i(TAG, "xray status: $s")
+                    }
+                    return 0
+                }
+
+                override fun shutdown(): Long {
+                    Log.i(TAG, "xray requested shutdown")
+                    return 0
+                }
+
+                override fun startup(): Long {
+                    Log.i(TAG, "xray startup callback")
+                    return 0
+                }
+            }
+
+            Log.i(TAG, "VPN start: newCoreController")
+            coreController = Libv2ray.newCoreController(callbackHandler)
+            Log.i(TAG, "VPN start: startLoop")
+            coreController?.startLoop(configJson, fd)
+
+            try {
+                val delayMs = coreController?.measureDelay("https://cp.cloudflare.com/generate_204")
+                Log.i(TAG, "xray measureDelay: ${delayMs}ms")
+            } catch (e: Exception) {
+                Log.e(TAG, "xray measureDelay failed: ${e.message}", e)
+            }
 
             isRunning = true
 
-            // Start foreground notification
+            // Update foreground notification to connected state.
             startForeground(VpnNotification.NOTIFICATION_ID, VpnNotification.build(this, true))
 
             Log.i(TAG, "VPN started successfully")
@@ -98,7 +138,8 @@ class PixelVpnService : VpnService() {
 
     private fun stopVpn() {
         try {
-            XrayCore.stop()
+            coreController?.stopLoop()
+            coreController = null
         } catch (e: Exception) {
             Log.w(TAG, "Error stopping xray: ${e.message}")
         }

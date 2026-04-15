@@ -68,6 +68,8 @@ pub struct RoutingRule {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub inbound_tag: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub port: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub domain: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub ip: Option<Vec<String>>,
@@ -170,13 +172,32 @@ impl XrayConfig {
             },
             inbounds: vec![
                 Inbound {
-                    tag: "socks-in".to_string(),
+                    tag: "socks".to_string(),
                     port: Some(SOCKS_INBOUND_PORT),
                     listen: Some("127.0.0.1".to_string()),
                     protocol: "socks".to_string(),
                     settings: serde_json::json!({
                         "auth": "noauth",
                         "udp": true
+                    }),
+                    sniffing: Some(SniffingConfig {
+                        enabled: true,
+                        dest_override: vec![
+                            "http".to_string(),
+                            "tls".to_string(),
+                            "quic".to_string(),
+                        ],
+                    }),
+                },
+                Inbound {
+                    tag: "tun".to_string(),
+                    port: None,
+                    listen: None,
+                    protocol: "tun".to_string(),
+                    settings: serde_json::json!({
+                        "name": "xray0",
+                        "mtu": [1500],
+                        "userLevel": 0
                     }),
                     sniffing: Some(SniffingConfig {
                         enabled: true,
@@ -281,6 +302,7 @@ impl XrayConfig {
         rules.push(RoutingRule {
             rule_type: "field".to_string(),
             inbound_tag: None,
+            port: None,
             domain: None,
             ip: Some(if geodata_available {
                 vec!["geoip:private".to_string()]
@@ -303,6 +325,7 @@ impl XrayConfig {
             rules.push(RoutingRule {
                 rule_type: "field".to_string(),
                 inbound_tag: None,
+                port: None,
                 domain: Some(vec!["geosite:category-ads-all".to_string()]),
                 ip: None,
                 outbound_tag: "block".to_string(),
@@ -319,6 +342,7 @@ impl XrayConfig {
                     rules.push(RoutingRule {
                         rule_type: "field".to_string(),
                         inbound_tag: None,
+                        port: None,
                         domain: Some(vec!["geosite:category-ru".to_string()]),
                         ip: None,
                         outbound_tag: "direct".to_string(),
@@ -326,6 +350,7 @@ impl XrayConfig {
                     rules.push(RoutingRule {
                         rule_type: "field".to_string(),
                         inbound_tag: None,
+                        port: None,
                         domain: None,
                         ip: Some(vec!["geoip:ru".to_string()]),
                         outbound_tag: "direct".to_string(),
@@ -337,6 +362,7 @@ impl XrayConfig {
                     rules.push(RoutingRule {
                         rule_type: "field".to_string(),
                         inbound_tag: None,
+                        port: None,
                         domain: Some(vec!["geosite:cn".to_string()]),
                         ip: None,
                         outbound_tag: "direct".to_string(),
@@ -344,6 +370,7 @@ impl XrayConfig {
                     rules.push(RoutingRule {
                         rule_type: "field".to_string(),
                         inbound_tag: None,
+                        port: None,
                         domain: None,
                         ip: Some(vec!["geoip:cn".to_string()]),
                         outbound_tag: "direct".to_string(),
@@ -360,6 +387,7 @@ impl XrayConfig {
             rules.push(RoutingRule {
                 rule_type: "field".to_string(),
                 inbound_tag: None,
+                port: None,
                 domain: Some(bypass_domains.to_vec()),
                 ip: None,
                 outbound_tag: "direct".to_string(),
@@ -371,20 +399,39 @@ impl XrayConfig {
             rules.push(RoutingRule {
                 rule_type: "field".to_string(),
                 inbound_tag: None,
+                port: None,
                 domain: None,
                 ip: Some(bypass_ips.to_vec()),
                 outbound_tag: "direct".to_string(),
             });
         }
 
+        #[cfg(target_os = "android")]
+        let capture_inbounds = vec!["tun".to_string(), "socks".to_string()];
+        #[cfg(not(target_os = "android"))]
+        let capture_inbounds = vec![
+            "tun-in".to_string(),
+            "socks-in".to_string(),
+            "http-in".to_string(),
+        ];
+
+        // Android TUN path sends DNS as UDP packets; keep DNS direct to avoid
+        // resolver stalls when upstream proxy does not relay UDP reliably.
+        #[cfg(target_os = "android")]
+        rules.push(RoutingRule {
+            rule_type: "field".to_string(),
+            inbound_tag: Some(capture_inbounds.clone()),
+            port: Some("53".to_string()),
+            domain: None,
+            ip: None,
+            outbound_tag: "direct".to_string(),
+        });
+
         // Force full tunnel for traffic captured by our inbounds.
         rules.push(RoutingRule {
             rule_type: "field".to_string(),
-            inbound_tag: Some(vec![
-                "tun-in".to_string(),
-                "socks-in".to_string(),
-                "http-in".to_string(),
-            ]),
+            inbound_tag: Some(capture_inbounds),
+            port: None,
             domain: None,
             ip: None,
             outbound_tag: "proxy".to_string(),

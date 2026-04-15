@@ -135,3 +135,25 @@ export async function syncPaymentIntentStatus(intentId: string) {
 
   return intent;
 }
+
+export async function syncPendingPaymentsForUser(userId: string) {
+  const pendingIntents = await prisma.paymentIntent.findMany({
+    where: {
+      userId,
+      provider: "yookassa",
+      status: PaymentStatus.PENDING
+    },
+    orderBy: {
+      createdAt: "desc"
+    },
+    take: 5
+  });
+
+  for (const intent of pendingIntents) {
+    try {
+      await syncPaymentIntentStatus(intent.id);
+    } catch {
+      // Ignore individual sync failures, frontend can retry.
+    }
+  }
+}

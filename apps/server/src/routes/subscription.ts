@@ -4,12 +4,15 @@ import { Router } from "express";
 import { getAuthUser, requireAuth } from "../auth/middleware";
 import { asyncHandler } from "../lib/async-handler";
 import { prisma } from "../lib/prisma";
+import { syncPendingPaymentsForUser } from "../payments/service";
 
 const subscriptionRouter = Router();
 
 subscriptionRouter.get("/current", requireAuth, asyncHandler(async (req, res) => {
   const auth = getAuthUser(req);
   const now = new Date();
+
+  await syncPendingPaymentsForUser(auth.id);
 
   const subscription = await prisma.subscription.findUnique({
     where: { userId: auth.id },

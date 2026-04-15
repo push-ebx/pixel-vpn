@@ -96,7 +96,7 @@ export default function HomePage({ onOpenBilling }: HomePageProps) {
 
   return (
     <div className="h-[calc(100vh-7.5rem)] overflow-y-auto flex flex-col px-6 py-4">
-      <h1 className="text-3xl font-semibold text-text-primary">Главная</h1>
+      <h1 className="text-4xl font-semibold text-text-primary">Главная</h1>
 
       <div className="flex-1 flex flex-col items-center justify-center gap-7 pb-4">
         <button
@@ -125,15 +125,6 @@ export default function HomePage({ onOpenBilling }: HomePageProps) {
           <span className="text-xl font-semibold text-accent leading-none">
             {connectionLabel}
           </span>
-          {!(activeServer && !isConnected && subscriptionActive) && (
-            <span className="text-sm leading-none">
-              {isConnected
-                ? `Подключено к ${activeServer?.name ?? "серверу"}`
-                : !subscriptionActive
-                  ? "Требуется активная подписка"
-                  : "Сервер не выбран"}
-            </span>
-          )}
           {connectedFor && (
             <span className="text-sm font-medium text-accent">
               Время сессии: {connectedFor}

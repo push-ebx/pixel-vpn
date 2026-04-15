@@ -5,8 +5,8 @@ export default function SettingsPage() {
   const isDark = theme === "dark";
 
   return (
-    <div className="min-h-[calc(100vh-7.5rem)] flex flex-col gap-4 px-4 py-4 overflow-y-auto">
-      <h1 className="text-3xl font-semibold text-text-primary">Настройки</h1>
+    <div className="h-[calc(100vh-7.5rem)] flex flex-col gap-4 px-4 py-4 overflow-y-auto">
+      <h1 className="text-4xl font-semibold text-text-primary">Настройки</h1>
 
       <div className="pixel-card bg-bg-card p-4">
         <button

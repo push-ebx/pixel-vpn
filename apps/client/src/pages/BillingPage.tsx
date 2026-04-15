@@ -49,6 +49,7 @@ export default function BillingPage() {
     subscription,
     subscriptionActive,
     subscriptionLoading,
+    loadSubscription,
     createPaymentIntent,
     currentPayment,
     paymentLoading,
@@ -61,6 +62,28 @@ export default function BillingPage() {
       .filter((plan) => plan.priceRub > 0 && plan.code.toLowerCase() !== "trial")
       .sort((left, right) => left.priceRub - right.priceRub);
   }, [plans]);
+
+  useEffect(() => {
+    void loadSubscription();
+  }, [loadSubscription]);
+
+  useEffect(() => {
+    const refreshSubscription = () => {
+      if (document.visibilityState !== "visible") {
+        return;
+      }
+
+      void loadSubscription();
+    };
+
+    window.addEventListener("focus", refreshSubscription);
+    document.addEventListener("visibilitychange", refreshSubscription);
+
+    return () => {
+      window.removeEventListener("focus", refreshSubscription);
+      document.removeEventListener("visibilitychange", refreshSubscription);
+    };
+  }, [loadSubscription]);
 
   useEffect(() => {
     if (!currentPayment || currentPayment.status !== "pending") {
@@ -100,7 +123,7 @@ export default function BillingPage() {
 
   return (
     <div className="h-[calc(100vh-7.5rem)] flex flex-col gap-4 px-4 py-4 overflow-y-auto">
-      <h1 className="text-3xl font-semibold text-text-primary">Тарифы и оплата</h1>
+      <h1 className="text-4xl font-semibold text-text-primary">Тарифы и оплата</h1>
 
       <div className="pixel-card bg-bg-card p-4 flex flex-col gap-2">
         <p className="text-sm text-text-secondary">Статус подписки</p>

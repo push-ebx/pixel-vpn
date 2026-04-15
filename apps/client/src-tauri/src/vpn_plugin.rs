@@ -5,19 +5,16 @@ use tauri::{
     plugin::{Builder, TauriPlugin},
     Runtime,
 };
+#[cfg(target_os = "android")]
+use tauri::Manager;
 
 #[cfg(target_os = "android")]
 use tauri::plugin::PluginHandle;
 
 #[cfg(target_os = "android")]
 use serde::{Deserialize, Serialize};
-
 #[cfg(target_os = "android")]
-#[derive(Serialize)]
-struct StartVpnRequest {
-    #[serde(rename = "configJson")]
-    config_json: String,
-}
+use serde_json::json;
 
 #[cfg(target_os = "android")]
 #[derive(Serialize)]
@@ -38,12 +35,15 @@ pub struct VpnPluginHandle<R: Runtime>(pub PluginHandle<R>);
 #[cfg(target_os = "android")]
 impl<R: Runtime> VpnPluginHandle<R> {
     pub fn start_vpn(&self, config_json: &str) -> Result<(), String> {
+        let payload = json!({
+            "configJson": config_json,
+            "config_json": config_json,
+        });
+
         self.0
             .run_mobile_plugin::<PluginResponse>(
                 "startVpn",
-                StartVpnRequest {
-                    config_json: config_json.to_string(),
-                },
+                payload,
             )
             .map(|_| ())
             .map_err(|e| format!("Failed to start Android VPN: {e}"))

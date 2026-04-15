@@ -3,10 +3,12 @@ package com.pixelvpn.app
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
+import go.Seq
 
 class MainActivity : TauriActivity() {
 
   override fun onCreate(savedInstanceState: Bundle?) {
+    Seq.setContext(applicationContext)
     enableEdgeToEdge()
     super.onCreate(savedInstanceState)
   }
