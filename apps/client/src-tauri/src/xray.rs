@@ -2,6 +2,7 @@
 use crate::config::XrayConfig;
 #[cfg(target_os = "windows")]
 use crate::config::TUN_INTERFACE_NAME;
+#[cfg(target_os = "macos")]
 use crate::helper_client::PrivilegedHelperClient;
 use crate::server::ServerConfig;
 use crate::settings::RoutingMode;
@@ -10,9 +11,7 @@ use std::io::Read;
 #[cfg(target_os = "macos")]
 use std::net::{IpAddr, Ipv4Addr, ToSocketAddrs};
 #[cfg(target_os = "windows")]
-use std::net::{Ipv4Addr, ToSocketAddrs};
-#[cfg(target_os = "windows")]
-use std::os::windows::process::CommandExt;
+use std::net::{IpAddr, Ipv4Addr, ToSocketAddrs};
 #[cfg(not(target_os = "android"))]
 use std::path::{Path, PathBuf};
 #[cfg(not(target_os = "android"))]
@@ -126,7 +125,7 @@ impl XrayManager {
         {
             #[cfg(target_os = "windows")]
             {
-                let utun_name = pick_utun_name_macos().unwrap_or_else(|_| "utun0".to_string());
+                let utun_name = "utun0".to_string();
                 for inbound in &mut config.inbounds {
                     if inbound.protocol == "tun" {
                         if let Some(obj) = inbound.settings.as_object_mut() {
@@ -180,6 +179,15 @@ impl XrayManager {
 
         #[cfg(target_os = "windows")]
         {
+            let utun_name = "utun0".to_string();
+            for inbound in &mut config.inbounds {
+                if inbound.protocol == "tun" {
+                    if let Some(obj) = inbound.settings.as_object_mut() {
+                        obj.insert("name".to_string(), serde_json::json!(utun_name));
+                    }
+                }
+            }
+
             if let Err(err) = self.apply_windows_routes(server) {
                 let _ = self.stop();
                 return Err(err);
@@ -516,7 +524,7 @@ impl XrayManager {
         let tun_ip = tun.ip.ok_or("TUN interface has no IP address")?;
 
         Command::new("route")
-            .args(["add", &server_ip.to_string(), default.next_hop.to_string()])
+            .args(["add", &server_ip.to_string(), &default.next_hop.to_string()])
             .creation_flags(CREATE_NO_WINDOW)
             .output()?;
 
@@ -526,7 +534,7 @@ impl XrayManager {
             .output()?;
 
         Command::new("route")
-            .args(["add", "0.0.0.0", "0.0.0.0", tun_ip.to_string()])
+            .args(["add", "0.0.0.0", "0.0.0.0", &tun_ip.to_string()])
             .creation_flags(CREATE_NO_WINDOW)
             .output()?;
 
@@ -556,7 +564,7 @@ impl XrayManager {
                 "add",
                 "0.0.0.0",
                 "0.0.0.0",
-                state.original_gateway.to_string(),
+                &state.original_gateway.to_string(),
             ])
             .creation_flags(CREATE_NO_WINDOW)
             .output();
@@ -565,7 +573,7 @@ impl XrayManager {
             .args([
                 "delete",
                 &state.server_ip.to_string(),
-                state.original_gateway.to_string(),
+                &state.original_gateway.to_string(),
             ])
             .creation_flags(CREATE_NO_WINDOW)
             .output();
@@ -758,7 +766,6 @@ impl CommandWindowsExt for std::process::Command {
     }
 
     fn creation_flags(&mut self, flags: u32) -> &mut Self {
-        use std::os::windows::process::CommandExt;
-        self.creation_flags(flags)
+        std::os::windows::process::CommandExt::creation_flags(self, flags)
     }
 }
