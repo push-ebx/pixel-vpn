@@ -45,73 +45,65 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="h-[calc(100vh-7.5rem)] flex flex-col gap-4 px-4 py-4 overflow-y-auto">
-      <h1 className="text-4xl font-semibold text-text-primary">Настройки</h1>
+    <div className="h-full flex flex-col gap-4 p-6">
+      <h1 className="font-pixel-title text-sm text-text-secondary">settings</h1>
 
-      <div className="pixel-card bg-bg-card p-4">
+      <div className="pixel-card p-4">
         <button
           type="button"
           onClick={() => setTheme(isDark ? "light" : "dark")}
-          className="w-full flex items-center justify-start gap-3"
+          className="w-full flex items-center justify-between"
         >
+          <span className="text-xs text-text-primary">theme</span>
           <span
-            className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
-              isDark ? "bg-accent" : "bg-bg-secondary"
+            className={`text-[10px] font-pixel-title ${
+              isDark ? "success" : "text-text-secondary"
             }`}
           >
-            <span
-              className={`inline-block h-6 w-6 transform rounded-full bg-white shadow transition-transform ${
-                isDark ? "translate-x-7" : "translate-x-1"
-              }`}
-            />
-          </span>
-          <span className="text-base font-medium text-text-primary">
-            Темная тема
+            {isDark ? "dark" : "light"}
           </span>
         </button>
       </div>
 
       {helperStatus && !helperStatus.running && (
-        <div className="pixel-card bg-bg-card p-4">
+        <div className="pixel-card p-4">
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-red-500" />
-              <span className="text-text-primary font-medium">
-                Системный компонент не установлен
+              <div className="w-1.5 h-1.5 rounded-full error" />
+              <span className="text-xs text-text-primary font-pixel-title">
+                helper not installed
               </span>
             </div>
-            <p className="text-sm text-text-secondary">
-              Для работы VPN без запроса пароля требуется установить системный компонент.
-              Это необходимо сделать один раз.
+            <p className="text-[10px] text-text-secondary terminal-text">
+              system helper required for vpn routing. install once.
             </p>
             {installError && (
-              <div className="mt-2 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
-                <p className="text-sm text-red-500 font-medium">Ошибка установки:</p>
-                <p className="text-xs text-red-400 mt-1">{installError}</p>
+              <div className="terminal-text error text-[10px] p-2">
+                error: {installError}
               </div>
             )}
             <button
               type="button"
               onClick={installHelper}
               disabled={isInstalling}
-              className="mt-2 px-4 py-2 bg-accent text-white rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+              className="pixel-button"
             >
-              {isInstalling ? "Установка..." : "Установить системный компонент"}
+              {isInstalling ? "installing..." : "install helper"}
             </button>
           </div>
         </div>
       )}
 
       {helperStatus && helperStatus.running && (
-        <div className="pixel-card bg-bg-card p-4">
+        <div className="pixel-card p-4">
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-green-500" />
-            <span className="text-text-primary font-medium">
-              Системный компонент активен
+            <div className="w-1.5 h-1.5 rounded-full success" />
+            <span className="text-xs text-text-primary font-pixel-title">
+              helper active
             </span>
           </div>
-          <p className="text-sm text-text-secondary mt-1">
-            VPN работает без запроса пароля
+          <p className="text-[10px] text-text-secondary mt-1 terminal-text">
+            vpn routing enabled
           </p>
         </div>
       )}

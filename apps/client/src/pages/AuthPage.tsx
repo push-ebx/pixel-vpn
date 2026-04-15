@@ -12,9 +12,7 @@ export default function AuthPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
 
-  const title = mode === "login" ? "Вход" : "Регистрация";
-  const submitLabel = mode === "login" ? "Войти" : "Создать аккаунт";
-  const switchLabel = mode === "login" ? "Нет аккаунта? Зарегистрироваться" : "Уже есть аккаунт? Войти";
+  const submitLabel = mode === "login" ? "Войти" : "Создать";
 
   const canSubmit = useMemo(() => {
     if (!email.trim() || !password) {
@@ -56,16 +54,16 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="h-full overflow-y-auto px-6 py-8 flex items-center justify-center">
-      <div className="w-full max-w-sm bg-bg-card border border-accent/20 rounded-3xl shadow-[0_20px_40px_rgba(34,62,145,0.12)] p-6">
-        <div className="flex flex-col items-center gap-3 mb-6">
-          <div className="w-14 h-14 rounded-2xl bg-accent/10 text-accent flex items-center justify-center">
+    <div className="h-full flex items-center justify-center p-6">
+      <div className="w-full max-w-xs">
+        <div className="flex flex-col items-center gap-4 mb-8">
+          <div className="w-12 h-12 flex items-center justify-center">
             <Logo width="2rem" height="2rem" />
           </div>
           <div className="text-center">
-            <h1 className="text-3xl font-semibold text-text-primary">{title}</h1>
-            <p className="text-sm text-text-secondary mt-1">
-              Синхронизация подписки между устройствами
+            <h1 className="font-pixel-title text-lg text-text-primary">Pixel VPN</h1>
+            <p className="text-xs text-text-secondary mt-1 terminal-text">
+              {mode === "login" ? "auth > login" : "auth > register"}
             </p>
           </div>
         </div>
@@ -75,17 +73,17 @@ export default function AuthPage() {
             type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            placeholder="Эл. почта"
+            placeholder="email"
             autoComplete="email"
-            className="h-11 rounded-xl border border-accent/20 bg-bg-primary px-3 text-sm text-text-primary focus:outline-none focus:border-accent/60"
+            className="pixel-input w-full"
           />
           <input
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            placeholder="Пароль (минимум 8 символов)"
+            placeholder="password"
             autoComplete={mode === "login" ? "current-password" : "new-password"}
-            className="h-11 rounded-xl border border-accent/20 bg-bg-primary px-3 text-sm text-text-primary focus:outline-none focus:border-accent/60"
+            className="pixel-input w-full"
           />
 
           {mode === "register" && (
@@ -93,14 +91,14 @@ export default function AuthPage() {
               type="password"
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
-              placeholder="Подтвердите пароль"
+              placeholder="confirm"
               autoComplete="new-password"
-              className="h-11 rounded-xl border border-accent/20 bg-bg-primary px-3 text-sm text-text-primary focus:outline-none focus:border-accent/60"
+              className="pixel-input w-full"
             />
           )}
 
           {(formError || authError) && (
-            <div className="text-sm text-danger bg-danger/10 border border-danger/30 rounded-xl px-3 py-2">
+            <div className="text-xs terminal-text error bg-bg-card border border-border p-2 rounded">
               {formError || authError}
             </div>
           )}
@@ -108,18 +106,18 @@ export default function AuthPage() {
           <button
             type="submit"
             disabled={!canSubmit || authLoading}
-            className="h-11 rounded-xl bg-accent text-white font-semibold hover:bg-accent-hover transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            className="pixel-button w-full"
           >
-            {authLoading ? "Подождите..." : submitLabel}
+            {authLoading ? "..." : submitLabel}
           </button>
         </form>
 
         <button
           type="button"
           onClick={toggleMode}
-          className="mt-4 text-sm text-accent hover:text-accent-hover transition-colors"
+          className="mt-4 text-xs text-text-secondary hover:text-text-primary transition-colors w-full text-center terminal-text"
         >
-          {switchLabel}
+          {mode === "login" ? "no account? create" : "has account? login"}
         </button>
       </div>
     </div>

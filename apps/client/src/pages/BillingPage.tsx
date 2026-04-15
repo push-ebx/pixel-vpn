@@ -3,20 +3,19 @@ import { useEffect, useMemo } from "react";
 import type { ApiPlan } from "../lib/api";
 import { useAccountStore } from "../stores/account-store";
 
-const paymentStatusLabelMap: Record<string, string> = {
-  pending: "Ожидает оплаты",
-  paid: "Оплачен",
-  failed: "Ошибка",
-  canceled: "Отменен",
-  expired: "Истек"
+const statusLabelMap: Record<string, string> = {
+  pending: "pending",
+  paid: "paid",
+  failed: "failed",
+  canceled: "canceled",
+  expired: "expired"
 };
 
 function formatPrice(priceRub: number) {
   if (priceRub <= 0) {
-    return "Бесплатно";
+    return "free";
   }
-
-  return `${priceRub} ₽`;
+  return `${priceRub}₽`;
 }
 
 function formatDate(value: string) {
@@ -37,8 +36,7 @@ function formatRemainingTime(days: number) {
   const totalMinutes = Math.max(0, Math.floor(days * 24 * 60));
   const fullDays = Math.floor(totalMinutes / (24 * 60));
   const hours = Math.floor((totalMinutes % (24 * 60)) / 60);
-  const minutes = totalMinutes % 60;
-  return `${fullDays} д ${hours} ч ${minutes} мин`;
+  return `${fullDays}d ${hours}h`;
 }
 
 export default function BillingPage() {
@@ -69,10 +67,7 @@ export default function BillingPage() {
 
   useEffect(() => {
     const refreshSubscription = () => {
-      if (document.visibilityState !== "visible") {
-        return;
-      }
-
+      if (document.visibilityState !== "visible") return;
       void loadSubscription();
     };
 
@@ -86,33 +81,24 @@ export default function BillingPage() {
   }, [loadSubscription]);
 
   useEffect(() => {
-    if (!currentPayment || currentPayment.status !== "pending") {
-      return;
-    }
+    if (!currentPayment || currentPayment.status !== "pending") return;
 
     const syncPayment = () => {
-      if (document.visibilityState !== "visible") {
-        return;
-      }
-
+      if (document.visibilityState !== "visible") return;
       void refreshPaymentIntent(currentPayment.id);
     };
 
     syncPayment();
     const interval = window.setInterval(syncPayment, 3500);
 
-    return () => {
-      window.clearInterval(interval);
-    };
+    return () => window.clearInterval(interval);
   }, [currentPayment, refreshPaymentIntent]);
 
   async function handleBuy(plan: ApiPlan) {
     const intent = await createPaymentIntent({ planId: plan.id });
     const checkoutUrl = intent.yookassa?.checkoutUrl;
 
-    if (!checkoutUrl) {
-      return;
-    }
+    if (!checkoutUrl) return;
 
     try {
       await open(checkoutUrl);
@@ -122,87 +108,81 @@ export default function BillingPage() {
   }
 
   return (
-    <div className="h-[calc(100vh-7.5rem)] flex flex-col gap-4 px-4 py-4 overflow-y-auto">
-      <h1 className="text-4xl font-semibold text-text-primary">Тарифы и оплата</h1>
+    <div className="h-full flex flex-col gap-4 p-6">
+      <h1 className="font-pixel-title text-sm text-text-secondary">billing</h1>
 
-      <div className="pixel-card bg-bg-card p-4 flex flex-col gap-2">
-        <p className="text-sm text-text-secondary">Статус подписки</p>
+      <div className="pixel-card p-3 flex flex-col gap-1">
+        <p className="text-[10px] text-text-secondary terminal-text">subscription</p>
         {subscriptionLoading ? (
-          <p className="text-sm text-text-primary">Загрузка...</p>
+          <p className="text-xs text-text-secondary">loading...</p>
         ) : subscriptionActive && subscription ? (
-          <>
-            <p className="text-base font-semibold text-accent">{subscription.plan.name}</p>
-            <p className="text-sm text-text-secondary">
-              Активна до {formatDate(subscription.endsAt)}
+          <div className="flex flex-col gap-0.5">
+            <p className="text-xs text-text-primary font-pixel-title">{subscription.plan.name}</p>
+            <p className="text-[10px] text-text-secondary terminal-text">
+              expires: {formatDate(subscription.endsAt)}
             </p>
-            <p className="text-sm text-text-secondary">Осталось {formatRemainingTime(subscription.remainingDays)}</p>
-          </>
+            <p className="text-[10px] text-text-secondary terminal-text">
+              remaining: {formatRemainingTime(subscription.remainingDays)}
+            </p>
+          </div>
         ) : (
-          <p className="text-sm text-text-primary">Подписка не активна</p>
+          <p className="text-xs text-text-secondary">inactive</p>
         )}
       </div>
 
       <div className="flex flex-col gap-2">
-        <p className="text-sm font-semibold text-text-primary">Доступные планы</p>
+        <p className="text-xs font-pixel-title text-text-secondary">plans</p>
         {plansLoading && (
-          <div className="pixel-card bg-bg-card p-4 text-sm text-text-secondary">Загрузка тарифов...</div>
+          <div className="pixel-card p-3 text-xs text-text-secondary">loading...</div>
         )}
         {plansError && (
-          <div className="pixel-card bg-danger/10 border-danger/30 p-3 text-sm text-danger">{plansError}</div>
+          <div className="terminal-text error text-xs p-2">{plansError}</div>
         )}
 
         {!plansLoading &&
           sortedPlans.map((plan) => (
-            <div key={plan.id} className="pixel-card bg-bg-card p-4 flex items-center justify-between gap-3">
+            <div key={plan.id} className="pixel-card p-3 flex items-center justify-between">
               <div>
-                <p className="text-base font-semibold text-text-primary">{plan.name}</p>
-                <p className="text-sm text-text-secondary">
-                  {plan.durationDays} дн. • {formatPrice(plan.priceRub)}
+                <p className="text-xs text-text-primary">{plan.name}</p>
+                <p className="text-[10px] text-text-secondary terminal-text">
+                  {plan.durationDays}d · {formatPrice(plan.priceRub)}
                 </p>
-                {plan.description && (
-                  <p className="text-xs text-text-secondary mt-1">{plan.description}</p>
-                )}
               </div>
               <button
                 type="button"
                 onClick={() => void handleBuy(plan)}
                 disabled={paymentLoading}
-                className="h-10 px-4 rounded-xl bg-accent text-white text-sm font-semibold hover:bg-accent-hover transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                className="pixel-button text-[10px] py-1.5 px-3"
               >
-                {plan.priceRub <= 0 ? "Активировать" : "Оплатить"}
+                {plan.priceRub <= 0 ? "activate" : "buy"}
               </button>
             </div>
           ))}
       </div>
 
       {currentPayment && (
-        <div className="pixel-card bg-bg-card p-4 flex flex-col gap-3">
+        <div className="pixel-card p-3 flex flex-col gap-2">
           <div>
-            <p className="text-base font-semibold text-text-primary">
-              Счет: {currentPayment.plan.name}
-            </p>
-            <p className="text-sm text-text-secondary">
-              {currentPayment.amountRub} ₽ • до {formatDate(currentPayment.expiresAt)}
+            <p className="text-xs text-text-primary">{currentPayment.plan.name}</p>
+            <p className="text-[10px] text-text-secondary terminal-text">
+              {currentPayment.amountRub}₽ · expires {formatDate(currentPayment.expiresAt)}
             </p>
           </div>
 
           {currentPayment.status === "pending" && (
-            <p className="text-sm text-text-secondary">
-              Ожидаем подтверждение оплаты от YooKassa...
+            <p className="text-[10px] text-text-secondary terminal-text">
+              waiting for payment...
             </p>
           )}
 
           {paymentError && (
-            <div className="text-sm text-danger bg-danger/10 border border-danger/30 rounded-xl px-3 py-2">
+            <div className="terminal-text error text-[10px] p-2">
               {paymentError}
             </div>
           )}
 
-          <p className="text-xs text-text-secondary">
-            Статус платежа:{" "}
-            <span className="font-semibold text-text-primary">
-              {paymentStatusLabelMap[currentPayment.status] ?? currentPayment.status}
-            </span>
+          <p className="text-[10px] text-text-secondary terminal-text">
+            status: <span className="text-text-primary">{statusLabelMap[currentPayment.status] ?? currentPayment.status}</span>
           </p>
         </div>
       )}

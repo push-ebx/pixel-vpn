@@ -19,7 +19,6 @@ export default function ServersPage() {
     setImporting(true);
     setImportError(null);
     try {
-      // Support multiple URIs (one per line)
       const uris = vlessInput
         .split("\n")
         .map((s) => s.trim())
@@ -37,53 +36,46 @@ export default function ServersPage() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-7.5rem)] flex flex-col gap-4 px-4 py-4 overflow-y-auto">
-      <h1 className="text-3xl font-semibold text-text-primary">Серверы</h1>
+    <div className="h-full flex flex-col gap-4 p-6">
+      <h1 className="font-pixel-title text-sm text-text-secondary">servers</h1>
 
-      {/* Import section */}
-      <div className="pixel-card bg-bg-card p-4 flex flex-col gap-3">
-        <h3 className="text-sm font-semibold text-text-primary">
-          Импорт сервера
+      <div className="pixel-card p-4 flex flex-col gap-3">
+        <h3 className="text-xs font-pixel-title text-text-secondary">
+          import vless
         </h3>
         <textarea
           value={vlessInput}
           onChange={(e) => setVlessInput(e.target.value)}
-          placeholder="vless://uuid@host:port?params#name"
+          placeholder="vless://..."
           rows={3}
-          className="bg-bg-secondary border border-accent/20 rounded-xl px-3 py-2 text-sm text-text-primary
-            placeholder:text-text-secondary/50
-            focus:border-accent/50 focus:outline-none resize-none
-            [user-select:text] [-webkit-user-select:text]"
+          className="pixel-input resize-none text-xs"
         />
         {importError && (
-          <p className="text-xs text-danger">{importError}</p>
+          <p className="terminal-text error text-xs">{importError}</p>
         )}
         <button
           onClick={handleImport}
           disabled={importing || !vlessInput.trim()}
-          className="text-sm font-semibold bg-accent hover:bg-accent-hover text-white
-            border border-accent/80 rounded-xl px-4 py-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="pixel-button"
         >
-          {importing ? "Импорт..." : "Импортировать"}
+          {importing ? "..." : "add"}
         </button>
       </div>
 
-      {/* Server list header */}
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-text-primary">
-          Серверы ({servers.length})
+        <h3 className="text-xs font-pixel-title text-text-secondary">
+          list [{servers.length}]
         </h3>
       </div>
 
-      {/* Server list */}
       {servers.length === 0 ? (
         <div className="flex-1 flex items-center justify-center">
-          <p className="text-sm text-text-secondary">
-            Серверов пока нет. Добавьте VLESS-ссылку выше.
+          <p className="text-xs text-text-secondary terminal-text">
+            no servers configured
           </p>
         </div>
       ) : (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-1">
           {servers.map((server) => {
             const isActive = server.id === activeServerId;
             return (
@@ -91,62 +83,57 @@ export default function ServersPage() {
                 key={server.id}
                 onClick={() => selectServer(server.id)}
                 className={`
-                  bg-bg-card p-3 flex items-center gap-3 cursor-pointer
-                  transition-all duration-200 border-2 pixel-card
+                  pixel-card p-3 flex items-center gap-3 cursor-pointer
+                  transition-all duration-100
                   ${isActive
-                    ? "border-accent/60 bg-accent/5"
-                    : "border-transparent hover:bg-bg-card-hover"
+                    ? "border-text-secondary"
+                    : "border-transparent hover:border-text-secondary/50"
                   }
                 `}
               >
-                {/* Active indicator */}
                 <div
-                  className={`w-2 h-2 rounded-full shrink-0 ${
-                    isActive ? "bg-accent" : "bg-text-secondary/30"
+                  className={`w-1.5 h-1.5 shrink-0 ${
+                    isActive ? "bg-text-primary" : "bg-text-secondary/40"
                   }`}
                 />
 
-                {/* Server info */}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-text-primary truncate">
+                  <p className="text-xs text-text-primary truncate">
                     {server.name}
                   </p>
-                  <p className="text-xs text-text-secondary truncate">
+                  <p className="text-[10px] text-text-secondary terminal-text truncate">
                     {server.address}:{server.port}
-                    {server.security && ` · ${server.security}`}
-                    {server.network && server.network !== "tcp" && ` · ${server.network}`}
+                    {server.security && ` [${server.security}]`}
+                    {server.network && server.network !== "tcp" && ` ${server.network}`}
                   </p>
                 </div>
 
-                {/* Latency */}
                 <div className="shrink-0 text-right">
                   {server.latency_ms != null ? (
                     <span
-                      className={`text-xs font-semibold ${
+                      className={`text-[10px] ${
                         server.latency_ms < 100
-                          ? "text-accent"
+                          ? "text-text-primary"
                           : server.latency_ms < 300
                             ? "text-text-secondary"
-                            : "text-danger"
+                            : "error"
                       }`}
                     >
                       {server.latency_ms}ms
                     </span>
                   ) : (
-                    <span className="text-xs font-medium text-text-secondary">
+                    <span className="text-[10px] text-text-secondary">
                       --
                     </span>
                   )}
                 </div>
 
-                {/* Delete */}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     removeServer(server.id);
                   }}
-                  className="shrink-0 text-text-secondary/40 hover:text-danger transition-colors text-xl leading-none"
-                  title="Удалить"
+                  className="shrink-0 text-text-secondary hover:text-text-primary transition-colors text-sm leading-none"
                 >
                   ×
                 </button>

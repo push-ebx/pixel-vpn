@@ -86,70 +86,71 @@ export default function HomePage({ onOpenBilling }: HomePageProps) {
     }
   }
 
-  const connectionLabel = isConnecting
-    ? "Подключение..."
+  const statusText = isConnecting
+    ? "connecting..."
     : status === "disconnecting"
-      ? "Отключение..."
+      ? "disconnecting..."
       : isConnected
-        ? "Подключено"
-        : "Подключить";
+        ? "connected"
+        : "disconnected";
 
   return (
-    <div className="h-[calc(100vh-7.5rem)] overflow-y-auto flex flex-col px-6 py-4">
-      <h1 className="text-4xl font-semibold text-text-primary">Главная</h1>
+    <div className="h-full flex flex-col p-6">
+      <h1 className="font-pixel-title text-sm text-text-secondary mb-6">dashboard</h1>
 
-      <div className="flex-1 flex flex-col items-center justify-center gap-7 pb-4">
+      <div className="flex-1 flex flex-col items-center justify-center gap-8">
         <button
           onClick={handleToggle}
           disabled={isBusy || (!isConnected && !canConnect)}
           className={`
-            w-56 h-56 border-[3px] rounded-full bg-bg-card
-            shadow-[0_12px_28px_rgba(34,62,145,0.15)]
-            transition-transform duration-200 ease-out cursor-pointer
-            disabled:cursor-not-allowed disabled:opacity-50
+            w-40 h-40 rounded border-2 flex items-center justify-center
+            transition-all duration-150 cursor-pointer
+            disabled:cursor-not-allowed disabled:opacity-30
             ${isConnected
-              ? "border-accent animate-pulse-glow hover:scale-[1.03]"
-              : "border-accent/80 hover:scale-[1.03]"
+              ? "border-text-primary bg-bg-card"
+              : "border-border hover:border-text-secondary"
             }
           `}
         >
-          <div className="flex h-full w-full items-center justify-center">
-            <LogoLoader
-              isLoading={isConnecting}
-              className="w-[8.4rem] h-[8.4rem] text-accent"
-            />
-          </div>
+          <LogoLoader
+            isLoading={isConnecting}
+            className="w-24 h-24 text-text-primary"
+          />
         </button>
 
-        <div className="flex flex-col items-center gap-2 text-text-secondary">
-          <span className="text-xl font-semibold text-accent leading-none">
-            {connectionLabel}
+        <div className="flex flex-col items-center gap-1 text-center">
+          <span className={`font-pixel-title text-xs ${isConnected ? "success" : "text-text-secondary"}`}>
+            [{statusText}]
           </span>
           {connectedFor && (
-            <span className="text-sm font-medium text-accent">
-              Время сессии: {connectedFor}
+            <span className="text-xs text-text-secondary terminal-text">
+              uptime: {connectedFor}
             </span>
           )}
         </div>
 
-        <div className="w-full max-w-md">
-          <div className="pixel-card bg-bg-card px-4 py-3 text-sm">
+        <div className="w-full max-w-xs">
+          <div className="pixel-card p-3">
             {subscriptionLoading ? (
-              <span className="text-text-secondary">Проверяем подписку...</span>
+              <span className="text-xs text-text-secondary">checking subscription...</span>
             ) : subscriptionActive && subscription ? (
-              <span className="text-text-primary">
-                Тариф <span className="font-semibold text-accent">{subscription.plan.name}</span> активен до{" "}
-                {new Date(subscription.endsAt).toLocaleDateString("ru-RU")}
-              </span>
+              <div className="flex flex-col gap-1">
+                <span className="text-xs text-text-secondary terminal-text">
+                  plan: <span className="text-text-primary">{subscription.plan.name}</span>
+                </span>
+                <span className="text-xs text-text-secondary terminal-text">
+                  expires: {new Date(subscription.endsAt).toLocaleDateString("ru-RU")}
+                </span>
+              </div>
             ) : (
               <div className="flex items-center justify-between gap-3">
-                <span className="text-text-secondary">Подписка не активна</span>
+                <span className="text-xs text-text-secondary">no active subscription</span>
                 <button
                   type="button"
                   onClick={onOpenBilling}
-                  className="h-8 px-3 rounded-lg bg-accent text-white text-xs font-semibold hover:bg-accent-hover transition-colors"
+                  className="pixel-button text-[10px] py-1.5 px-3"
                 >
-                  Оформить
+                  upgrade
                 </button>
               </div>
             )}
@@ -157,23 +158,20 @@ export default function HomePage({ onOpenBilling }: HomePageProps) {
         </div>
 
         {error && (
-          <div className="bg-danger/10 border border-danger/40 rounded-xl px-4 py-3 text-sm text-danger max-w-md w-full">
-            <div className="whitespace-pre-wrap break-all max-h-48 overflow-auto text-left">
-              {error}
-            </div>
-            <div className="mt-2 flex items-center justify-end gap-2">
-              {copiedError && (
-                <span className="text-xs text-text-secondary">
-                  Скопировано
-                </span>
-              )}
-              <button
-                type="button"
-                onClick={copyError}
-                className="px-3 py-1.5 border border-danger/40 bg-bg-card hover:bg-danger/15 transition-colors text-xs font-medium rounded-lg cursor-pointer"
-              >
-                Скопировать ошибку
-              </button>
+          <div className="w-full max-w-xs">
+            <div className="terminal-text error bg-bg-card border border-border p-3 rounded text-xs">
+              <div className="whitespace-pre-wrap break-all max-h-32 overflow-auto">
+                {error}
+              </div>
+              <div className="mt-2 flex items-center justify-end">
+                <button
+                  type="button"
+                  onClick={copyError}
+                  className="text-[10px] text-text-secondary hover:text-text-primary"
+                >
+                  {copiedError ? "[copied]" : "[copy]"}
+                </button>
+              </div>
             </div>
           </div>
         )}
