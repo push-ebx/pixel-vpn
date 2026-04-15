@@ -1,8 +1,14 @@
 mod commands;
 mod config;
+#[cfg(not(target_os = "macos"))]
 mod elevation;
+#[cfg(target_os = "macos")]
+mod helper_client;
+#[cfg(target_os = "macos")]
+mod helper_installer;
 mod server;
 mod settings;
+mod system_proxy;
 mod vpn_plugin;
 mod xray;
 
@@ -16,6 +22,7 @@ use xray::AndroidVpnBridge;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    #[cfg(not(target_os = "macos"))]
     match elevation::ensure_admin_or_relaunch() {
         Ok(true) => {}
         Ok(false) => return,
@@ -24,6 +31,9 @@ pub fn run() {
             return;
         }
     }
+
+    #[cfg(target_os = "macos")]
+    log::info!("Starting Pixel VPN (using privileged helper for admin operations)");
 
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
@@ -55,6 +65,10 @@ pub fn run() {
             get_settings,
             set_routing_mode,
             set_bypass_lists,
+            // Helper (macOS)
+            install_helper,
+            uninstall_helper,
+            get_helper_status,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

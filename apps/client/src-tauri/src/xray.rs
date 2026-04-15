@@ -1,21 +1,24 @@
 #[cfg(not(target_os = "android"))]
-use std::path::{Path, PathBuf};
+use crate::config::XrayConfig;
+#[cfg(target_os = "windows")]
+use crate::config::TUN_INTERFACE_NAME;
+use crate::helper_client::PrivilegedHelperClient;
+use crate::server::ServerConfig;
+use crate::settings::RoutingMode;
 #[cfg(not(target_os = "android"))]
-use std::process::{Child, Command};
-#[cfg(not(target_os = "android"))]
-use std::{io::Read, thread, time::Duration};
+use std::io::Read;
+#[cfg(target_os = "macos")]
+use std::net::{IpAddr, Ipv4Addr, ToSocketAddrs};
 #[cfg(target_os = "windows")]
 use std::net::{Ipv4Addr, ToSocketAddrs};
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
-#[cfg(target_os = "windows")]
-use crate::config::TUN_INTERFACE_NAME;
 #[cfg(not(target_os = "android"))]
-use crate::config::XrayConfig;
-use crate::server::ServerConfig;
-use crate::settings::RoutingMode;
-
-// ─── Desktop (Windows/Linux/macOS) ──────────────────────────────────
+use std::path::{Path, PathBuf};
+#[cfg(not(target_os = "android"))]
+use std::process::{Child, Command};
+#[cfg(not(target_os = "android"))]
+use std::{thread, time::Duration};
 
 #[cfg(target_os = "windows")]
 #[derive(Debug, Clone)]
@@ -48,6 +51,14 @@ pub struct XrayManager {
     config_path: PathBuf,
     #[cfg(target_os = "windows")]
     route_state: Option<RouteState>,
+    #[cfg(target_os = "macos")]
+    helper_client: Option<PrivilegedHelperClient>,
+    #[cfg(target_os = "macos")]
+    macos_route_state: Option<MacosRouteState>,
+    #[cfg(target_os = "macos")]
+    macos_pid: Option<u32>,
+    #[cfg(target_os = "macos")]
+    macos_log_path: PathBuf,
 }
 
 #[cfg(not(target_os = "android"))]
@@ -59,6 +70,14 @@ impl XrayManager {
             config_path,
             #[cfg(target_os = "windows")]
             route_state: None,
+            #[cfg(target_os = "macos")]
+            helper_client: None,
+            #[cfg(target_os = "macos")]
+            macos_route_state: None,
+            #[cfg(target_os = "macos")]
+            macos_pid: None,
+            #[cfg(target_os = "macos")]
+            macos_log_path: std::env::temp_dir().join("pixel-vpn-xray.log"),
         }
     }
 
@@ -76,54 +95,89 @@ impl XrayManager {
         let xray_bin = self.find_xray_binary()?;
         let geodata_available = Self::has_geodata_for_binary(&xray_bin);
 
-        let config = XrayConfig::build(
+        #[cfg(target_os = "macos")]
+        {
+            let config = XrayConfig::build_proxy_only(
+                server,
+                routing_mode,
+                bypass_domains,
+                bypass_ips,
+                geodata_available,
+            );
+            let config_json = serde_json::to_string_pretty(&config)?;
+            std::fs::write(&self.config_path, &config_json)?;
+            self.start_xray_macos(&xray_bin)?;
+            self.enable_macos_proxy()?;
+            return Ok(());
+        }
+
+        #[cfg(not(target_os = "macos"))]
+        let mut config = XrayConfig::build(
             server,
             routing_mode,
             bypass_domains,
             bypass_ips,
             geodata_available,
         );
-        let config_json = serde_json::to_string_pretty(&config)?;
-        std::fs::write(&self.config_path, config_json)?;
 
-        let mut child = Command::new(xray_bin)
-            .args(["run", "-config"])
-            .arg(&self.config_path)
-            .stdout(std::process::Stdio::piped())
-            .stderr(std::process::Stdio::piped())
-            .pipe_windows_no_window()
-            .spawn()?;
+        #[cfg(target_os = "macos")]
+        let _ = (routing_mode, bypass_domains, bypass_ips);
 
-        // Fail fast if xray exits immediately (e.g. missing admin rights / wintun for TUN mode).
-        thread::sleep(Duration::from_millis(200));
-        if let Some(status) = child.try_wait()? {
-            let mut stderr_text = String::new();
-            let mut stdout_text = String::new();
-            if let Some(mut stderr) = child.stderr.take() {
-                let mut buf = Vec::new();
-                if stderr.read_to_end(&mut buf).is_ok() {
-                    stderr_text = String::from_utf8_lossy(&buf).trim().to_string();
-                }
-            }
-            if let Some(mut stdout) = child.stdout.take() {
-                let mut buf = Vec::new();
-                if stdout.read_to_end(&mut buf).is_ok() {
-                    stdout_text = String::from_utf8_lossy(&buf).trim().to_string();
+        #[cfg(not(target_os = "macos"))]
+        {
+            #[cfg(target_os = "windows")]
+            {
+                let utun_name = pick_utun_name_macos().unwrap_or_else(|_| "utun0".to_string());
+                for inbound in &mut config.inbounds {
+                    if inbound.protocol == "tun" {
+                        if let Some(obj) = inbound.settings.as_object_mut() {
+                            obj.insert("name".to_string(), serde_json::json!(utun_name));
+                        }
+                    }
                 }
             }
 
-            let details = if !stderr_text.is_empty() {
-                stderr_text
-            } else if !stdout_text.is_empty() {
-                stdout_text
-            } else {
-                format!("xray exited with status {status}")
-            };
+            let config_json = serde_json::to_string_pretty(&config)?;
+            std::fs::write(&self.config_path, &config_json)?;
 
-            return Err(format!("Failed to start xray: {details}").into());
+            let mut child = Command::new(&xray_bin)
+                .args(["run", "-config"])
+                .arg(&self.config_path)
+                .stdout(std::process::Stdio::piped())
+                .stderr(std::process::Stdio::piped())
+                .pipe_windows_no_window()
+                .spawn()?;
+
+            thread::sleep(Duration::from_millis(200));
+            if let Some(status) = child.try_wait()? {
+                let mut stderr_text = String::new();
+                let mut stdout_text = String::new();
+                if let Some(mut stderr) = child.stderr.take() {
+                    let mut buf = Vec::new();
+                    if stderr.read_to_end(&mut buf).is_ok() {
+                        stderr_text = String::from_utf8_lossy(&buf).trim().to_string();
+                    }
+                }
+                if let Some(mut stdout) = child.stdout.take() {
+                    let mut buf = Vec::new();
+                    if stdout.read_to_end(&mut buf).is_ok() {
+                        stdout_text = String::from_utf8_lossy(&buf).trim().to_string();
+                    }
+                }
+
+                let details = if !stderr_text.is_empty() {
+                    stderr_text
+                } else if !stdout_text.is_empty() {
+                    stdout_text
+                } else {
+                    format!("xray exited with status {status}")
+                };
+
+                return Err(format!("Failed to start xray: {details}").into());
+            }
+
+            self.process = Some(child);
         }
-
-        self.process = Some(child);
 
         #[cfg(target_os = "windows")]
         {
@@ -138,6 +192,12 @@ impl XrayManager {
     }
 
     pub fn stop(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        #[cfg(target_os = "macos")]
+        {
+            self.disable_macos_proxy()?;
+            self.stop_xray_macos()?;
+        }
+
         #[cfg(target_os = "windows")]
         let route_error = self.clear_windows_routes().err();
 
@@ -157,7 +217,15 @@ impl XrayManager {
     }
 
     pub fn is_running(&self) -> bool {
-        self.process.is_some()
+        #[cfg(target_os = "macos")]
+        {
+            return self.macos_pid.is_some();
+        }
+
+        #[cfg(not(target_os = "macos"))]
+        {
+            self.process.is_some()
+        }
     }
 
     fn find_xray_binary(&self) -> Result<PathBuf, Box<dyn std::error::Error>> {
@@ -183,23 +251,29 @@ impl XrayManager {
 
         let mut possible_paths = Vec::new();
         for root in &search_roots {
-            Self::push_unique_path(&mut possible_paths, root.join("xray.exe"));
-            Self::push_unique_path(&mut possible_paths, root.join("binaries").join("xray.exe"));
+            #[cfg(target_os = "windows")]
+            let bin_name = "xray.exe";
+            #[cfg(not(target_os = "windows"))]
+            let bin_name = "xray";
+
+            Self::push_unique_path(&mut possible_paths, root.join(bin_name));
+            Self::push_unique_path(&mut possible_paths, root.join("binaries").join(bin_name));
             Self::push_unique_path(
                 &mut possible_paths,
-                root.join("src-tauri").join("binaries").join("xray.exe"),
+                root.join("src-tauri").join("binaries").join(bin_name),
             );
-            Self::push_unique_path(&mut possible_paths, root.join("resources").join("xray.exe"));
+            Self::push_unique_path(&mut possible_paths, root.join("resources").join(bin_name));
             Self::push_unique_path(
                 &mut possible_paths,
-                root.join("resources").join("binaries").join("xray.exe"),
+                root.join("resources").join("binaries").join(bin_name),
             );
         }
 
-        if let Some(path_binary) = Self::find_in_path("xray.exe") {
+        if let Some(path_binary) = Self::find_in_path("xray") {
             Self::push_unique_path(&mut possible_paths, path_binary);
         }
-        if let Some(path_binary) = Self::find_in_path("xray") {
+        #[cfg(target_os = "windows")]
+        if let Some(path_binary) = Self::find_in_path("xray.exe") {
             Self::push_unique_path(&mut possible_paths, path_binary);
         }
 
@@ -245,6 +319,191 @@ impl XrayManager {
         }
     }
 
+    #[cfg(target_os = "macos")]
+    fn start_xray_macos(&mut self, xray_bin: &Path) -> Result<(), Box<dyn std::error::Error>> {
+        let mut client = PrivilegedHelperClient::new();
+
+        let pid = client
+            .start_xray(
+                &self.config_path.display().to_string(),
+                &xray_bin.display().to_string(),
+            )
+            .map_err(|e| format!("Failed to start xray: {}", e))?;
+
+        thread::sleep(Duration::from_millis(500));
+
+        let is_running = std::process::Command::new("pgrep")
+            .args(["-x", "xray"])
+            .output()
+            .map(|o| o.status.success())
+            .unwrap_or(false);
+
+        if !is_running {
+            let log_content = std::fs::read_to_string("/tmp/pixel-vpn-xray.log")
+                .unwrap_or_else(|_| "No log".to_string());
+            return Err(format!("xray exited immediately. Log:\n{}", log_content).into());
+        }
+
+        self.macos_pid = Some(pid);
+        self.helper_client = Some(client);
+
+        log::info!("Xray started (PID: {})", pid);
+        Ok(())
+    }
+
+    #[cfg(target_os = "macos")]
+    fn enable_macos_proxy(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        if let Some(ref mut client) = self.helper_client {
+            client
+                .enable_proxy()
+                .map_err(|e| format!("Failed to enable proxy: {}", e))?;
+        }
+        log::info!("System proxy enabled");
+        Ok(())
+    }
+
+    #[cfg(target_os = "macos")]
+    fn disable_macos_proxy(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        if let Some(ref mut client) = self.helper_client {
+            let _ = client.disable_proxy();
+        }
+        log::info!("System proxy disabled");
+        Ok(())
+    }
+
+    #[cfg(target_os = "macos")]
+    fn stop_xray_macos(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        if let Some(ref mut client) = self.helper_client {
+            let _ = client.stop_xray();
+        }
+        self.helper_client = None;
+        self.macos_pid = None;
+        Ok(())
+    }
+
+    #[cfg(target_os = "macos")]
+    fn apply_macos_routes(
+        &mut self,
+        server: &ServerConfig,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        if self.helper_client.is_none() {
+            return Err("Helper client not initialized".into());
+        }
+
+        self.clear_macos_routes().ok();
+
+        let server_ip = Self::resolve_server_ipv4_macos(server)?;
+        let default = Self::get_default_route_macos()?;
+        let utun = self.wait_utun_interface(Duration::from_secs(12))?;
+
+        if let Some(ref mut client) = self.helper_client {
+            client
+                .add_route(&server_ip.to_string(), &default.gateway, &utun)
+                .map_err(|e| format!("Failed to add route: {}", e))?;
+        }
+
+        self.macos_route_state = Some(MacosRouteState {
+            server_ip,
+            original_gateway: default.gateway,
+            original_interface: default.interface,
+            utun,
+        });
+
+        Ok(())
+    }
+
+    #[cfg(target_os = "macos")]
+    fn clear_macos_routes(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        let Some(state) = self.macos_route_state.take() else {
+            return Ok(());
+        };
+
+        if let Some(ref mut client) = self.helper_client {
+            let _ = client.remove_route(&state.server_ip.to_string(), &state.original_gateway);
+        }
+
+        let _ = state.original_interface;
+        Ok(())
+    }
+
+    #[cfg(target_os = "macos")]
+    fn resolve_server_ipv4_macos(
+        server: &ServerConfig,
+    ) -> Result<Ipv4Addr, Box<dyn std::error::Error>> {
+        if let Ok(ip) = server.address.parse::<Ipv4Addr>() {
+            return Ok(ip);
+        }
+
+        let target = format!("{}:{}", server.address, server.port);
+        let resolved = target
+            .to_socket_addrs()?
+            .find_map(|socket| match socket.ip() {
+                IpAddr::V4(ipv4) => Some(ipv4),
+                _ => None,
+            });
+
+        resolved.ok_or_else(|| "Failed to resolve IPv4 for VPN server".into())
+    }
+
+    #[cfg(target_os = "macos")]
+    fn get_default_route_macos() -> Result<MacosDefaultRoute, Box<dyn std::error::Error>> {
+        let output = Command::new("route")
+            .args(["-n", "get", "default"])
+            .output()?;
+
+        let text = String::from_utf8_lossy(&output.stdout);
+        let mut gateway = String::new();
+        let mut interface = String::new();
+
+        for line in text.lines() {
+            let line = line.trim();
+            if line.starts_with("gateway:") {
+                gateway = line.split_whitespace().nth(1).unwrap_or("").to_string();
+            }
+            if line.starts_with("interface:") {
+                interface = line.split_whitespace().nth(1).unwrap_or("").to_string();
+            }
+        }
+
+        if gateway.is_empty() || interface.is_empty() {
+            return Err("Could not determine default route".into());
+        }
+
+        Ok(MacosDefaultRoute { gateway, interface })
+    }
+
+    #[cfg(target_os = "macos")]
+    fn wait_utun_interface(&self, timeout: Duration) -> Result<String, Box<dyn std::error::Error>> {
+        let start = std::time::Instant::now();
+
+        while start.elapsed() < timeout {
+            let output = Command::new("ifconfig").output()?;
+            let text = String::from_utf8_lossy(&output.stdout);
+
+            for line in text.lines() {
+                if line.starts_with("utun") {
+                    let parts: Vec<&str> = line.split(':').collect();
+                    if parts.len() >= 1 {
+                        let name = parts[0].trim().to_string();
+                        if !name.is_empty()
+                            && name
+                                .chars()
+                                .all(|c| c.is_ascii_digit() || c == 'u' || c == 't' || c == 'n')
+                        {
+                            return Ok(name);
+                        }
+                    }
+                }
+            }
+
+            std::thread::sleep(Duration::from_millis(500));
+        }
+
+        Err("Timeout waiting for utun interface".into())
+    }
+
+    // ─── Windows routing helpers ─────────────────────────────────────────
+
     #[cfg(target_os = "windows")]
     fn apply_windows_routes(
         &mut self,
@@ -252,47 +511,31 @@ impl XrayManager {
     ) -> Result<(), Box<dyn std::error::Error>> {
         self.clear_windows_routes().ok();
 
-        let tun = self.wait_tun_interface_info(Duration::from_secs(12))?;
-        let server_ip = Self::resolve_server_ipv4(server)?;
-        let default_route = Self::get_default_ipv4_route_excluding(tun.interface_index)?;
+        let server_ip = Self::resolve_server_ipv4_windows(server)?;
+        let default = Self::get_default_route_windows()?;
+        let tun = Self::get_tun_interface_info_windows()?;
 
-        Self::route_add(
-            &[
-                "add",
-                &server_ip.to_string(),
-                "mask",
-                "255.255.255.255",
-                &default_route.next_hop.to_string(),
-                "metric",
-                "1",
-            ],
-            true,
-        )?;
+        let tun_ip = tun.ip.ok_or("TUN interface has no IP address")?;
 
-        let tun_next_hop = tun
-            .ip
-            .map(|ip| ip.to_string())
-            .unwrap_or_else(|| "0.0.0.0".to_string());
+        Command::new("route")
+            .args(["add", &server_ip.to_string(), default.next_hop.to_string()])
+            .creation_flags(CREATE_NO_WINDOW)
+            .output()?;
 
-        Self::route_add(
-            &[
-                "add",
-                "0.0.0.0",
-                "mask",
-                "0.0.0.0",
-                &tun_next_hop,
-                "if",
-                &tun.interface_index.to_string(),
-                "metric",
-                "3",
-            ],
-            true,
-        )?;
+        Command::new("route")
+            .args(["delete", "0.0.0.0", "0.0.0.0"])
+            .creation_flags(CREATE_NO_WINDOW)
+            .output()?;
+
+        Command::new("route")
+            .args(["add", "0.0.0.0", "0.0.0.0", tun_ip.to_string()])
+            .creation_flags(CREATE_NO_WINDOW)
+            .output()?;
 
         self.route_state = Some(RouteState {
             server_ip,
-            original_gateway: default_route.next_hop,
-            tun_next_hop,
+            original_gateway: default.next_hop,
+            tun_next_hop: tun_ip.to_string(),
             tun_interface_index: tun.interface_index,
         });
 
@@ -305,163 +548,37 @@ impl XrayManager {
             return Ok(());
         };
 
-        Self::route_delete(
-            &[
-                "delete",
-                "0.0.0.0",
-                "mask",
-                "0.0.0.0",
-                &state.tun_next_hop,
-                "if",
-                &state.tun_interface_index.to_string(),
-            ],
-            true,
-        )?;
+        let _ = Command::new("route")
+            .args(["delete", "0.0.0.0", "0.0.0.0", &state.tun_next_hop])
+            .creation_flags(CREATE_NO_WINDOW)
+            .output();
 
-        Self::route_delete(
-            &[
+        let _ = Command::new("route")
+            .args([
+                "add",
+                "0.0.0.0",
+                "0.0.0.0",
+                state.original_gateway.to_string(),
+            ])
+            .creation_flags(CREATE_NO_WINDOW)
+            .output();
+
+        let _ = Command::new("route")
+            .args([
                 "delete",
                 &state.server_ip.to_string(),
-                "mask",
-                "255.255.255.255",
-                &state.original_gateway.to_string(),
-            ],
-            true,
-        )?;
+                state.original_gateway.to_string(),
+            ])
+            .creation_flags(CREATE_NO_WINDOW)
+            .output();
 
         Ok(())
     }
 
     #[cfg(target_os = "windows")]
-    fn wait_tun_interface_info(&mut self, timeout: Duration) -> Result<TunInterfaceInfo, Box<dyn std::error::Error>> {
-        let deadline = std::time::Instant::now() + timeout;
-        while std::time::Instant::now() < deadline {
-            if let Ok(info) = Self::get_tun_interface_info() {
-                return Ok(info);
-            }
-
-            if self.xray_exited() {
-                let details = self.take_xray_output().unwrap_or_else(|| "xray process exited unexpectedly".to_string());
-                return Err(format!("Failed to start xray: {details}").into());
-            }
-            thread::sleep(Duration::from_millis(120));
-        }
-        Err("Failed to detect TUN interface".into())
-    }
-
-    #[cfg(target_os = "windows")]
-    fn get_tun_interface_info() -> Result<TunInterfaceInfo, Box<dyn std::error::Error>> {
-        if let Ok(interface_index) = Self::get_tun_interface_index_from_route_print() {
-            return Ok(TunInterfaceInfo {
-                ip: None,
-                interface_index,
-            });
-        }
-        Err("No TUN interface yet".into())
-    }
-
-    #[cfg(target_os = "windows")]
-    fn get_tun_interface_index_from_route_print() -> Result<u32, Box<dyn std::error::Error>> {
-        let output = Command::new("route")
-            .arg("print")
-            .pipe_windows_no_window()
-            .output()?;
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
-            return Err(format!("route print failed: {stderr}").into());
-        }
-
-        let text = String::from_utf8_lossy(&output.stdout);
-        let mut fallback: Option<u32> = None;
-
-        for line in text.lines() {
-            let trimmed = line.trim();
-            if trimmed.is_empty() {
-                continue;
-            }
-
-            let Some(dot_pos) = trimmed.find("...") else {
-                continue;
-            };
-
-            let idx_str = trimmed[..dot_pos].trim();
-            let Ok(index) = idx_str.parse::<u32>() else {
-                continue;
-            };
-
-            let name = if let Some(sep) = trimmed.rfind("......") {
-                trimmed[sep + 6..].trim()
-            } else {
-                trimmed
-            };
-            let name_lc = name.to_lowercase();
-
-            if name.eq_ignore_ascii_case(TUN_INTERFACE_NAME) {
-                return Ok(index);
-            }
-
-            if name_lc.contains("xray") || name_lc.contains("pixel") {
-                return Ok(index);
-            }
-
-            if fallback.is_none() && (name_lc.contains("tunnel") || name_lc.contains("wintun")) {
-                fallback = Some(index);
-            }
-        }
-
-        fallback.ok_or_else(|| "TUN interface not present in route print".into())
-    }
-
-    #[cfg(target_os = "windows")]
-    fn get_default_ipv4_route_excluding(
-        excluded_interface_index: u32,
-    ) -> Result<DefaultRouteInfo, Box<dyn std::error::Error>> {
-        let output = Command::new("route")
-            .args(["print", "0.0.0.0"])
-            .pipe_windows_no_window()
-            .output()?;
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
-            return Err(format!("route print failed: {stderr}").into());
-        }
-
-        let text = String::from_utf8_lossy(&output.stdout);
-        let mut best: Option<(u32, Ipv4Addr)> = None;
-        for line in text.lines() {
-            let trimmed = line.trim();
-            if !trimmed.starts_with("0.0.0.0") {
-                continue;
-            }
-            let parts = trimmed.split_whitespace().collect::<Vec<_>>();
-            if parts.len() < 5 {
-                continue;
-            }
-            let gateway = parts[2].parse::<Ipv4Addr>().ok();
-            let metric = parts[4].parse::<u32>().ok();
-            let Some(gateway) = gateway else {
-                continue;
-            };
-            let Some(metric) = metric else {
-                continue;
-            };
-            if gateway == Ipv4Addr::new(0, 0, 0, 0) {
-                continue;
-            }
-
-            let _ = excluded_interface_index;
-            if best.as_ref().is_none_or(|(best_metric, _)| metric < *best_metric) {
-                best = Some((metric, gateway));
-            }
-        }
-
-        let Some((_, next_hop)) = best else {
-            return Err("Default IPv4 route not found".into());
-        };
-        Ok(DefaultRouteInfo { next_hop })
-    }
-
-    #[cfg(target_os = "windows")]
-    fn resolve_server_ipv4(server: &ServerConfig) -> Result<Ipv4Addr, Box<dyn std::error::Error>> {
+    fn resolve_server_ipv4_windows(
+        server: &ServerConfig,
+    ) -> Result<Ipv4Addr, Box<dyn std::error::Error>> {
         if let Ok(ip) = server.address.parse::<Ipv4Addr>() {
             return Ok(ip);
         }
@@ -470,7 +587,7 @@ impl XrayManager {
         let resolved = target
             .to_socket_addrs()?
             .find_map(|socket| match socket.ip() {
-                std::net::IpAddr::V4(ipv4) => Some(ipv4),
+                IpAddr::V4(ipv4) => Some(ipv4),
                 _ => None,
             });
 
@@ -478,112 +595,68 @@ impl XrayManager {
     }
 
     #[cfg(target_os = "windows")]
-    fn route_add(args: &[&str], ignore_exists: bool) -> Result<(), Box<dyn std::error::Error>> {
+    fn get_default_route_windows() -> Result<DefaultRouteInfo, Box<dyn std::error::Error>> {
         let output = Command::new("route")
-            .args(args)
-            .pipe_windows_no_window()
+            .args(["print", "0.0.0.0"])
+            .creation_flags(CREATE_NO_WINDOW)
             .output()?;
-        if output.status.success() {
-            return Ok(());
+
+        let text = String::from_utf8_lossy(&output.stdout);
+        for line in text.lines() {
+            let parts: Vec<_> = line.split_whitespace().collect();
+            if parts.len() >= 3 && parts[0] == "0.0.0.0" && parts[1] == "0.0.0.0" {
+                if let Ok(gateway) = parts[2].parse::<Ipv4Addr>() {
+                    return Ok(DefaultRouteInfo { next_hop: gateway });
+                }
+            }
         }
 
-        let stderr = String::from_utf8_lossy(&output.stderr).to_string();
-        let stdout = String::from_utf8_lossy(&output.stdout).to_string();
-        let combined = format!("{stdout}\n{stderr}");
-        let normalized = combined.to_lowercase();
-
-        if ignore_exists && (normalized.contains("already exists") || normalized.contains("уже существует")) {
-            return Ok(());
-        }
-
-        Err(format!("route add failed: {}", combined.trim()).into())
+        Err("Could not determine default gateway".into())
     }
 
     #[cfg(target_os = "windows")]
-    fn route_delete(args: &[&str], ignore_missing: bool) -> Result<(), Box<dyn std::error::Error>> {
-        let output = Command::new("route")
-            .args(args)
-            .pipe_windows_no_window()
-            .output()?;
-        if output.status.success() {
-            return Ok(());
-        }
+    fn get_tun_interface_info_windows() -> Result<TunInterfaceInfo, Box<dyn std::error::Error>> {
+        let output = Command::new("ipconfig").output()?;
 
-        let stderr = String::from_utf8_lossy(&output.stderr).to_string();
-        let stdout = String::from_utf8_lossy(&output.stdout).to_string();
-        let combined = format!("{stdout}\n{stderr}");
-        let normalized = combined.to_lowercase();
+        let text = String::from_utf8_lossy(&output.stdout);
+        let mut current_adapter: Option<String> = None;
+        let mut current_ip: Option<Ipv4Addr> = None;
+        let mut current_index: Option<u32> = None;
+        let mut index: u32 = 0;
 
-        if ignore_missing
-            && (normalized.contains("not found")
-                || normalized.contains("не найден")
-                || normalized.contains("элемент не найден"))
-        {
-            return Ok(());
-        }
+        for line in text.lines() {
+            let line = line.trim();
 
-        Err(format!("route delete failed: {}", combined.trim()).into())
-    }
-
-    fn xray_exited(&mut self) -> bool {
-        let Some(child) = self.process.as_mut() else {
-            return false;
-        };
-        child.try_wait().ok().flatten().is_some()
-    }
-
-    fn take_xray_output(&mut self) -> Option<String> {
-        let child = self.process.as_mut()?;
-        let mut stderr_text = String::new();
-        let mut stdout_text = String::new();
-
-        if let Some(mut stderr) = child.stderr.take() {
-            let mut buf = Vec::new();
-            if stderr.read_to_end(&mut buf).is_ok() {
-                stderr_text = String::from_utf8_lossy(&buf).trim().to_string();
-            }
-        }
-        if let Some(mut stdout) = child.stdout.take() {
-            let mut buf = Vec::new();
-            if stdout.read_to_end(&mut buf).is_ok() {
-                stdout_text = String::from_utf8_lossy(&buf).trim().to_string();
+            if line.ends_with(':') && !line.starts_with(" ") {
+                if current_adapter.is_some() && current_ip.is_some() {
+                    if current_adapter
+                        .as_ref()
+                        .unwrap()
+                        .contains(TUN_INTERFACE_NAME)
+                    {
+                        return Ok(TunInterfaceInfo {
+                            ip: current_ip,
+                            interface_index: current_index.unwrap_or(index),
+                        });
+                    }
+                }
+                current_adapter = Some(line.trim_end_matches(':').to_string());
+                current_ip = None;
+                current_index = None;
+                index += 1;
+            } else if line.starts_with("IPv4 Address") {
+                if let Some(ip_str) = line.split(':').nth(1) {
+                    if let Ok(ip) = ip_str.trim().parse::<Ipv4Addr>() {
+                        current_ip = Some(ip);
+                        current_index = Some(index);
+                    }
+                }
             }
         }
 
-        if !stderr_text.is_empty() {
-            Some(stderr_text)
-        } else if !stdout_text.is_empty() {
-            Some(stdout_text)
-        } else {
-            None
-        }
+        Err("Could not find TUN interface info".into())
     }
 }
-
-#[cfg(not(target_os = "android"))]
-trait CommandExtNoWindow {
-    fn pipe_windows_no_window(&mut self) -> &mut Self;
-}
-
-#[cfg(not(target_os = "android"))]
-impl CommandExtNoWindow for Command {
-    fn pipe_windows_no_window(&mut self) -> &mut Self {
-        #[cfg(target_os = "windows")]
-        {
-            self.creation_flags(CREATE_NO_WINDOW);
-        }
-        self
-    }
-}
-
-#[cfg(not(target_os = "android"))]
-impl Drop for XrayManager {
-    fn drop(&mut self) {
-        let _ = self.stop();
-    }
-}
-
-// ─── Android ────────────────────────────────────────────────────────
 
 #[cfg(target_os = "android")]
 pub struct AndroidVpnBridge {
@@ -620,31 +693,74 @@ impl AndroidVpnBridge {
         let config_json = serde_json::to_string(&config)?;
 
         self.config_json = Some(config_json);
-
         self.running = true;
-        log::info!("Android VPN bridge: config prepared, waiting for plugin to start service");
+
         Ok(())
     }
 
     pub fn stop(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         self.running = false;
         self.config_json = None;
-        log::info!("Android VPN bridge: stopped");
         Ok(())
     }
 
     pub fn is_running(&self) -> bool {
         self.running
     }
-
-    pub fn take_config(&self) -> Option<String> {
-        self.config_json.clone()
-    }
 }
 
-#[cfg(target_os = "android")]
-impl Drop for AndroidVpnBridge {
-    fn drop(&mut self) {
-        let _ = self.stop();
+#[cfg(target_os = "macos")]
+struct MacosRouteState {
+    server_ip: Ipv4Addr,
+    original_gateway: String,
+    original_interface: String,
+    utun: String,
+}
+
+#[cfg(target_os = "macos")]
+struct MacosDefaultRoute {
+    gateway: String,
+    interface: String,
+}
+
+#[cfg(target_os = "macos")]
+fn pick_utun_name_macos() -> Result<String, Box<dyn std::error::Error>> {
+    let output = std::process::Command::new("ifconfig").arg("-l").output()?;
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        return Err(format!("ifconfig -l failed: {stderr}").into());
+    }
+
+    let text = String::from_utf8_lossy(&output.stdout);
+    let mut max_seen: i32 = -1;
+    for token in text.split_whitespace() {
+        if let Some(num) = token.strip_prefix("utun") {
+            if let Ok(n) = num.parse::<i32>() {
+                if n > max_seen {
+                    max_seen = n;
+                }
+            }
+        }
+    }
+    let candidate = max_seen + 1;
+    Ok(format!("utun{candidate}"))
+}
+
+#[cfg(target_os = "windows")]
+trait CommandWindowsExt {
+    fn pipe_windows_no_window(&mut self) -> &mut Self;
+    fn creation_flags(&mut self, flags: u32) -> &mut Self;
+}
+
+#[cfg(target_os = "windows")]
+impl CommandWindowsExt for std::process::Command {
+    fn pipe_windows_no_window(&mut self) -> &mut Self {
+        self.stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::piped())
+    }
+
+    fn creation_flags(&mut self, flags: u32) -> &mut Self {
+        use std::os::windows::process::CommandExt;
+        self.creation_flags(flags)
     }
 }

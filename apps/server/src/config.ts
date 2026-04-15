@@ -15,7 +15,25 @@ const envSchema = z.object({
   YOOKASSA_SHOP_ID: z.string().optional(),
   YOOKASSA_SECRET_KEY: z.string().optional(),
   SBP_MERCHANT_NAME: z.string().default("Pixel VPN"),
-  SBP_MERCHANT_BANK: z.string().default("MVP Bank")
+  SBP_MERCHANT_BANK: z.string().default("MVP Bank"),
+
+  // x-ui API settings for managing VLESS users
+  XUI_ENABLED: z.coerce.boolean().default(false),
+  XUI_BASE_URL: z.string().default("http://localhost:2053"),
+  XUI_USERNAME: z.string().default("admin"),
+  XUI_PASSWORD: z.string().default("admin"),
+  XUI_INBOUND_TAG: z.string().default("vless-reality"),
+  XUI_FLOW: z.string().default("xtls-rprx-vision"),
+  XUI_PORT: z.coerce.number().int().positive().default(443),
+
+  // VPN (Xray Reality) server parameters used to build VLESS links for users.
+  XRAY_HOST: z.string().min(1).default("127.0.0.1"),
+  XRAY_PORT: z.coerce.number().int().positive().default(443),
+  XRAY_PUBLIC_KEY: z.string().min(1).default("CHANGE-ME-PUBLIC-KEY"),
+  XRAY_SNI: z.string().min(1).default("www.google.com"),
+  XRAY_SHORT_ID: z.string().default(""),
+  XRAY_FLOW: z.string().default("xtls-rprx-vision"),
+  XRAY_FINGERPRINT: z.string().default("chrome")
 });
 
 const parsed = envSchema.safeParse(process.env);

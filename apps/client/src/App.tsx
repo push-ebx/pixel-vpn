@@ -10,11 +10,18 @@ import SettingsPage from "./pages/SettingsPage";
 
 type Tab = "home" | "billing" | "settings";
 
+interface HelperStatus {
+  installed: boolean;
+  running: boolean;
+}
+
 function App() {
   const [tab, setTab] = useState<Tab>("billing");
   const { loadSettings, theme } = useVpnStore();
   const { authReady, user, hydrateAuth, loadPlans, loadSubscription } = useAccountStore();
   const isMobileUi = /android|iphone|ipad|ipod/i.test(navigator.userAgent);
+  const [showHelperBanner, setShowHelperBanner] = useState(false);
+  const [isInstallingHelper, setIsInstallingHelper] = useState(false);
 
   useEffect(() => {
     void loadSettings();
@@ -37,6 +44,34 @@ function App() {
       cancelled = true;
     };
   }, [hydrateAuth, loadPlans, loadSubscription]);
+
+  useEffect(() => {
+    const checkHelper = async () => {
+      try {
+        const status = await invoke<HelperStatus>("get_helper_status");
+        if (!status.running) {
+          setShowHelperBanner(true);
+        }
+      } catch (e) {
+        console.error("Failed to check helper:", e);
+      }
+    };
+    if (user) {
+      void checkHelper();
+    }
+  }, [user]);
+
+  const handleInstallHelper = async () => {
+    setIsInstallingHelper(true);
+    try {
+      await invoke("install_helper");
+      setShowHelperBanner(false);
+    } catch (e) {
+      console.error("Failed to install helper:", e);
+    } finally {
+      setIsInstallingHelper(false);
+    }
+  };
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -102,6 +137,22 @@ function App() {
           </>
         )}
       </main>
+
+      {showHelperBanner && user && (
+        <div className="fixed bottom-20 left-3 right-3 z-50 bg-accent text-white p-3 rounded-lg shadow-lg flex items-center justify-between">
+          <div className="flex-1">
+            <p className="text-sm font-medium">Установить системный компонент?</p>
+            <p className="text-xs opacity-80">Пароль потребуется ввести один раз</p>
+          </div>
+          <button
+            onClick={handleInstallHelper}
+            disabled={isInstallingHelper}
+            className="ml-3 px-3 py-1.5 bg-white text-accent rounded text-sm font-medium hover:bg-opacity-90 disabled:opacity-50"
+          >
+            {isInstallingHelper ? "..." : "Установить"}
+          </button>
+        </div>
+      )}
 
       {user && (
         <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-accent/20 bg-bg-card/95 backdrop-blur pb-[env(safe-area-inset-bottom)]">

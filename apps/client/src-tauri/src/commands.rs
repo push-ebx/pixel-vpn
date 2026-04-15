@@ -12,6 +12,8 @@ use crate::settings::{AppSettings, RoutingMode};
 use crate::xray::XrayManager;
 #[cfg(target_os = "android")]
 use crate::xray::AndroidVpnBridge;
+#[cfg(target_os = "macos")]
+use crate::helper_installer::HelperInstaller;
 
 pub struct AppState {
     #[cfg(not(target_os = "android"))]
@@ -300,4 +302,52 @@ fn fetch_http_status(host: &str, path: &str) -> Result<u16, String> {
     }
 
     Err(format!("No HTTP response from {}", host))
+}
+
+// ─── Helper commands ────────────────────────────────────────────────
+
+#[cfg(target_os = "macos")]
+#[tauri::command]
+pub async fn install_helper() -> Result<(), String> {
+    HelperInstaller::install()
+}
+
+#[cfg(target_os = "macos")]
+#[tauri::command]
+pub async fn uninstall_helper() -> Result<(), String> {
+    HelperInstaller::uninstall()
+}
+
+#[cfg(target_os = "macos")]
+#[tauri::command]
+pub async fn get_helper_status() -> Result<HelperStatus, String> {
+    Ok(HelperStatus {
+        installed: HelperInstaller::is_installed(),
+        running: HelperInstaller::is_running(),
+    })
+}
+
+#[cfg(target_os = "macos")]
+#[derive(serde::Serialize)]
+pub struct HelperStatus {
+    pub installed: bool,
+    pub running: bool,
+}
+
+#[cfg(not(target_os = "macos"))]
+#[tauri::command]
+pub async fn install_helper() -> Result<(), String> {
+    Ok(())
+}
+
+#[cfg(not(target_os = "macos"))]
+#[tauri::command]
+pub async fn uninstall_helper() -> Result<(), String> {
+    Ok(())
+}
+
+#[cfg(not(target_os = "macos"))]
+#[tauri::command]
+pub async fn get_helper_status() -> Result<(), String> {
+    Ok(())
 }

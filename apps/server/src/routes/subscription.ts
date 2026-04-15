@@ -5,6 +5,7 @@ import { getAuthUser, requireAuth } from "../auth/middleware";
 import { asyncHandler } from "../lib/async-handler";
 import { prisma } from "../lib/prisma";
 import { syncPendingPaymentsForUser } from "../payments/service";
+import { buildVlessLink } from "../vpn/vless";
 
 const subscriptionRouter = Router();
 
@@ -57,6 +58,50 @@ subscriptionRouter.get("/current", requireAuth, asyncHandler(async (req, res) =>
         priceRub: normalizedSubscription.plan.priceRub,
         durationDays: normalizedSubscription.plan.durationDays
       }
+    }
+  });
+}));
+
+subscriptionRouter.get("/vless", requireAuth, asyncHandler(async (req, res) => {
+  const auth = getAuthUser(req);
+  const now = new Date();
+
+  await syncPendingPaymentsForUser(auth.id);
+
+  const user = await prisma.user.findUnique({
+    where: { id: auth.id },
+    select: {
+      vpnUuid: true,
+      email: true,
+      xuiEmail: true,
+      xuiInboundId: true
+    }
+  });
+
+  const subscription = await prisma.subscription.findUnique({
+    where: { userId: auth.id }
+  });
+
+  const active =
+    Boolean(subscription) &&
+    subscription!.status === SubscriptionStatus.ACTIVE &&
+    subscription!.endsAt > now;
+
+  if (!active) {
+    return res.status(403).json({ error: "Подписка не активна" });
+  }
+
+  if (!user?.vpnUuid) {
+    return res.status(409).json({ error: "VPN ключ еще не сгенерирован" });
+  }
+
+  let vlessLink = buildVlessLink({ uuid: user.vpnUuid, label: "PixelVPN" });
+
+  return res.json({
+    vless: {
+      uuid: user.vpnUuid,
+      link: vlessLink,
+      xuiEnabled: Boolean(user.xuiEmail && user.xuiInboundId)
     }
   });
 }));

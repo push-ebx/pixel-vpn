@@ -101,13 +101,89 @@ impl XrayConfig {
                     port: None,
                     listen: None,
                     protocol: "tun".to_string(),
-                    settings: serde_json::json!({
-                        "name": TUN_INTERFACE_NAME,
-                        "MTU": 1500,
-                        "userLevel": 0
-                    }),
+                    // macOS requires utunN naming; let Xray auto-pick utun* by omitting name.
+                    // Other platforms can use a friendly interface name.
+                    settings: {
+                        #[cfg(target_os = "macos")]
+                        {
+                            serde_json::json!({
+                                "mtu": 1500,
+                                "userLevel": 0
+                            })
+                        }
+                        #[cfg(not(target_os = "macos"))]
+                        {
+                            serde_json::json!({
+                                "name": TUN_INTERFACE_NAME,
+                                "mtu": 1500,
+                                "userLevel": 0
+                            })
+                        }
+                    },
                     sniffing: None,
                 },
+                Inbound {
+                    tag: "socks-in".to_string(),
+                    port: Some(SOCKS_INBOUND_PORT),
+                    listen: Some("127.0.0.1".to_string()),
+                    protocol: "socks".to_string(),
+                    settings: serde_json::json!({
+                        "auth": "noauth",
+                        "udp": true
+                    }),
+                    sniffing: Some(SniffingConfig {
+                        enabled: true,
+                        dest_override: vec![
+                            "http".to_string(),
+                            "tls".to_string(),
+                            "quic".to_string(),
+                        ],
+                    }),
+                },
+                Inbound {
+                    tag: "http-in".to_string(),
+                    port: Some(HTTP_INBOUND_PORT),
+                    listen: Some("127.0.0.1".to_string()),
+                    protocol: "http".to_string(),
+                    settings: serde_json::json!({}),
+                    sniffing: None,
+                },
+            ],
+            outbounds: vec![
+                proxy_outbound,
+                Outbound {
+                    tag: "direct".to_string(),
+                    protocol: "freedom".to_string(),
+                    settings: None,
+                    stream_settings: None,
+                },
+                Outbound {
+                    tag: "block".to_string(),
+                    protocol: "blackhole".to_string(),
+                    settings: None,
+                    stream_settings: None,
+                },
+            ],
+            routing: Some(routing),
+        }
+    }
+
+    #[cfg(not(target_os = "android"))]
+    pub fn build_proxy_only(
+        server: &ServerConfig,
+        routing_mode: &RoutingMode,
+        bypass_domains: &[String],
+        bypass_ips: &[String],
+        geodata_available: bool,
+    ) -> Self {
+        let proxy_outbound = Self::build_vless_outbound(server);
+        let routing = Self::build_routing(routing_mode, bypass_domains, bypass_ips, geodata_available);
+
+        Self {
+            log: LogConfig {
+                loglevel: "warning".to_string(),
+            },
+            inbounds: vec![
                 Inbound {
                     tag: "socks-in".to_string(),
                     port: Some(SOCKS_INBOUND_PORT),
