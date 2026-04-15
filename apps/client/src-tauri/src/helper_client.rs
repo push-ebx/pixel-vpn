@@ -42,7 +42,7 @@ impl PrivilegedHelperClient {
         let escaped_config = config_path.replace("'", "'\\''");
 
         let script = format!(
-            "do shell script \"'{xray}' run -config '{config}' >/tmp/pixel-vpn-xray.log 2>&1 & sleep 3\" with administrator privileges",
+            "do shell script \"'{xray}' run -config '{config}' >/tmp/pixel-vpn-xray.log 2>&1 & sleep 3 && networksetup -setwebproxy Wi-Fi 127.0.0.1 10809 && networksetup -setwebproxystate Wi-Fi on && networksetup -setsocksfirewallproxy Wi-Fi 127.0.0.1 10808 && networksetup -setsocksfirewallproxystate Wi-Fi on\" with administrator privileges",
             xray = escaped_xray,
             config = escaped_config
         );
@@ -57,7 +57,6 @@ impl PrivilegedHelperClient {
             return Err(format!("Failed: {}", stderr));
         }
 
-        // Check if xray is running
         let check = Command::new("pgrep").args(["-x", "xray"]).output();
 
         let pid = match check {
@@ -75,11 +74,7 @@ impl PrivilegedHelperClient {
     }
 
     pub fn stop_xray(&mut self) -> Result<(), String> {
-        let script =
-            "do shell script \"pkill -9 xray 2>/dev/null || true\" with administrator privileges";
-
-        let _ = Command::new("osascript").args(["-e", script]).output();
-
+        let _ = Command::new("pkill").args(["-9", "xray"]).output();
         self.connected = false;
         Ok(())
     }
@@ -98,26 +93,10 @@ impl PrivilegedHelperClient {
     }
 
     pub fn enable_proxy(&mut self) -> Result<(), String> {
-        let script = "do shell script \"networksetup -setwebproxy Wi-Fi 127.0.0.1 10809 && networksetup -setwebproxystate Wi-Fi on && networksetup -setsocksfirewallproxy Wi-Fi 127.0.0.1 10808 && networksetup -setsocksfirewallproxystate Wi-Fi on\" with administrator privileges";
-
-        let output = Command::new("osascript")
-            .args(["-e", script])
-            .output()
-            .map_err(|e| format!("Failed to enable proxy: {}", e))?;
-
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(format!("Failed to enable proxy: {}", stderr));
-        }
-
         Ok(())
     }
 
     pub fn disable_proxy(&mut self) -> Result<(), String> {
-        let script = "do shell script \"networksetup -setwebproxystate Wi-Fi off && networksetup -setsocksfirewallproxystate Wi-Fi off\" with administrator privileges";
-
-        let _ = Command::new("osascript").args(["-e", script]).output();
-
         Ok(())
     }
 }

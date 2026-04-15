@@ -107,7 +107,6 @@ impl XrayManager {
             let config_json = serde_json::to_string_pretty(&config)?;
             std::fs::write(&self.config_path, &config_json)?;
             self.start_xray_macos(&xray_bin)?;
-            self.enable_macos_proxy()?;
             return Ok(());
         }
 
@@ -194,7 +193,6 @@ impl XrayManager {
     pub fn stop(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         #[cfg(target_os = "macos")]
         {
-            self.disable_macos_proxy()?;
             self.stop_xray_macos()?;
         }
 
