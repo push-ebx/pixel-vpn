@@ -7,13 +7,6 @@ const prisma = new PrismaClient();
 async function main() {
   const plans = [
     {
-      code: "trial-3d",
-      name: "Пробный на 3 дня",
-      description: "Стартовый доступ для проверки VPN",
-      priceRub: 0,
-      durationDays: 3
-    },
-    {
       code: "basic-30d",
       name: "Базовый на 30 дней",
       description: "Тариф для повседневного использования",

@@ -75,6 +75,12 @@ impl PrivilegedHelperClient {
 
     pub fn stop_xray(&mut self) -> Result<(), String> {
         let _ = Command::new("pkill").args(["-9", "xray"]).output();
+        let _ = Command::new("networksetup")
+            .args(["-setwebproxystate", "Wi-Fi", "off"])
+            .output();
+        let _ = Command::new("networksetup")
+            .args(["-setsocksfirewallproxystate", "Wi-Fi", "off"])
+            .output();
         self.connected = false;
         Ok(())
     }
