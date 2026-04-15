@@ -3,12 +3,16 @@ mod config;
 mod elevation;
 mod server;
 mod settings;
+mod vpn_plugin;
 mod xray;
 
 use std::sync::Mutex;
 use commands::*;
 use settings::AppSettings;
+#[cfg(not(target_os = "android"))]
 use xray::XrayManager;
+#[cfg(target_os = "android")]
+use xray::AndroidVpnBridge;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -23,8 +27,12 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
+        .plugin(vpn_plugin::init())
         .manage(AppState {
+            #[cfg(not(target_os = "android"))]
             xray: Mutex::new(XrayManager::new()),
+            #[cfg(target_os = "android")]
+            xray: Mutex::new(AndroidVpnBridge::new()),
             settings: Mutex::new(AppSettings::load()),
         })
         .invoke_handler(tauri::generate_handler![

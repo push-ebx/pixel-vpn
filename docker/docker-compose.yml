@@ -12,7 +12,7 @@ services:
       MYSQL_USER: pixelvpn
       MYSQL_PASSWORD: pixelvpn
     ports:
-      - "3306:3306"
+      - "3307:3306"
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h localhost -proot --silent"]
       interval: 10s

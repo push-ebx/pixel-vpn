@@ -6,10 +6,16 @@ use std::time::{Duration, Instant};
 use tauri::State;
 use crate::server::ServerConfig;
 use crate::settings::{AppSettings, RoutingMode};
+#[cfg(not(target_os = "android"))]
 use crate::xray::XrayManager;
+#[cfg(target_os = "android")]
+use crate::xray::AndroidVpnBridge;
 
 pub struct AppState {
+    #[cfg(not(target_os = "android"))]
     pub xray: Mutex<XrayManager>,
+    #[cfg(target_os = "android")]
+    pub xray: Mutex<AndroidVpnBridge>,
     pub settings: Mutex<AppSettings>,
 }
 
@@ -55,7 +61,10 @@ pub fn window_close(window: tauri::Window) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub async fn connect_vpn(state: State<'_, AppState>) -> Result<String, String> {
+pub async fn connect_vpn(
+    state: State<'_, AppState>,
+    app: tauri::AppHandle,
+) -> Result<String, String> {
     let (server, routing_mode, bypass_domains, bypass_ips) = {
         let settings = state.settings.lock().map_err(|e| e.to_string())?;
         let server = settings
@@ -76,25 +85,51 @@ pub async fn connect_vpn(state: State<'_, AppState>) -> Result<String, String> {
             .map_err(|e| e.to_string())?;
     }
 
-    let readiness = tokio::task::spawn_blocking(|| {
-        wait_for_connectivity(Duration::from_secs(15))
-    })
-    .await
-    .map_err(|e| e.to_string())?;
+    #[cfg(not(target_os = "android"))]
+    {
+        let _ = &app;
+        let readiness = tokio::task::spawn_blocking(|| {
+            wait_for_connectivity(Duration::from_secs(15))
+        })
+        .await
+        .map_err(|e| e.to_string())?;
 
-    if let Err(err) = readiness {
-        let mut xray = state.xray.lock().map_err(|e| e.to_string())?;
-        let _ = xray.stop();
-        return Err(err);
+        if let Err(err) = readiness {
+            let mut xray = state.xray.lock().map_err(|e| e.to_string())?;
+            let _ = xray.stop();
+            return Err(err);
+        }
+    }
+
+    #[cfg(target_os = "android")]
+    {
+        let config_json = {
+            let xray = state.xray.lock().map_err(|e| e.to_string())?;
+            xray.take_config().ok_or("No VPN config available")?
+        };
+        let vpn_plugin = app.state::<crate::vpn_plugin::VpnPluginHandle<tauri::Wry>>();
+        vpn_plugin.start_vpn(&config_json)?;
     }
 
     Ok("Connected".to_string())
 }
 
 #[tauri::command]
-pub async fn disconnect_vpn(state: State<'_, AppState>) -> Result<String, String> {
+pub async fn disconnect_vpn(
+    state: State<'_, AppState>,
+    app: tauri::AppHandle,
+) -> Result<String, String> {
     let mut xray = state.xray.lock().map_err(|e| e.to_string())?;
     xray.stop().map_err(|e| e.to_string())?;
+
+    #[cfg(target_os = "android")]
+    {
+        let vpn_plugin = app.state::<crate::vpn_plugin::VpnPluginHandle<tauri::Wry>>();
+        vpn_plugin.stop_vpn()?;
+    }
+
+    #[cfg(not(target_os = "android"))]
+    let _ = &app;
 
     Ok("Disconnected".to_string())
 }

@@ -1,5 +1,8 @@
+#[cfg(not(target_os = "android"))]
 use std::path::{Path, PathBuf};
+#[cfg(not(target_os = "android"))]
 use std::process::{Child, Command};
+#[cfg(not(target_os = "android"))]
 use std::{io::Read, thread, time::Duration};
 #[cfg(target_os = "windows")]
 use std::net::{Ipv4Addr, ToSocketAddrs};
@@ -7,9 +10,12 @@ use std::net::{Ipv4Addr, ToSocketAddrs};
 use std::os::windows::process::CommandExt;
 #[cfg(target_os = "windows")]
 use crate::config::TUN_INTERFACE_NAME;
+#[cfg(not(target_os = "android"))]
 use crate::config::XrayConfig;
 use crate::server::ServerConfig;
 use crate::settings::RoutingMode;
+
+// ─── Desktop (Windows/Linux/macOS) ──────────────────────────────────
 
 #[cfg(target_os = "windows")]
 #[derive(Debug, Clone)]
@@ -36,6 +42,7 @@ struct DefaultRouteInfo {
 #[cfg(target_os = "windows")]
 const CREATE_NO_WINDOW: u32 = 0x08000000;
 
+#[cfg(not(target_os = "android"))]
 pub struct XrayManager {
     process: Option<Child>,
     config_path: PathBuf,
@@ -43,6 +50,7 @@ pub struct XrayManager {
     route_state: Option<RouteState>,
 }
 
+#[cfg(not(target_os = "android"))]
 impl XrayManager {
     pub fn new() -> Self {
         let config_path = std::env::temp_dir().join("pixel-vpn-xray-config.json");
@@ -261,8 +269,6 @@ impl XrayManager {
             true,
         )?;
 
-        // Xray's TUN inbound does not change system routes automatically.
-        // Route all IPv4 traffic via TUN and keep a dedicated route to server endpoint.
         let tun_next_hop = tun
             .ip
             .map(|ip| ip.to_string())
@@ -442,7 +448,6 @@ impl XrayManager {
                 continue;
             }
 
-            // best metric wins; excluded interface index is currently used only in old PS path
             let _ = excluded_interface_index;
             if best.as_ref().is_none_or(|(best_metric, _)| metric < *best_metric) {
                 best = Some((metric, gateway));
@@ -555,10 +560,12 @@ impl XrayManager {
     }
 }
 
+#[cfg(not(target_os = "android"))]
 trait CommandExtNoWindow {
     fn pipe_windows_no_window(&mut self) -> &mut Self;
 }
 
+#[cfg(not(target_os = "android"))]
 impl CommandExtNoWindow for Command {
     fn pipe_windows_no_window(&mut self) -> &mut Self {
         #[cfg(target_os = "windows")]
@@ -569,7 +576,76 @@ impl CommandExtNoWindow for Command {
     }
 }
 
+#[cfg(not(target_os = "android"))]
 impl Drop for XrayManager {
+    fn drop(&mut self) {
+        let _ = self.stop();
+    }
+}
+
+// ─── Android ────────────────────────────────────────────────────────
+
+#[cfg(target_os = "android")]
+use std::sync::mpsc;
+
+#[cfg(target_os = "android")]
+pub struct AndroidVpnBridge {
+    running: bool,
+}
+
+#[cfg(target_os = "android")]
+impl AndroidVpnBridge {
+    pub fn new() -> Self {
+        Self { running: false }
+    }
+
+    pub fn start(
+        &mut self,
+        server: &ServerConfig,
+        routing_mode: &RoutingMode,
+        bypass_domains: &[String],
+        bypass_ips: &[String],
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        if self.running {
+            self.stop()?;
+        }
+
+        let config = crate::config::XrayConfig::build_for_android(
+            server,
+            routing_mode,
+            bypass_domains,
+            bypass_ips,
+        );
+        let config_json = serde_json::to_string(&config)?;
+
+        // Send config to Kotlin VpnService via the Tauri plugin channel.
+        // The actual call is made from commands.rs which has access to AppHandle.
+        // Store the config so it can be retrieved by the plugin.
+        std::env::set_var("PIXEL_VPN_CONFIG", &config_json);
+
+        self.running = true;
+        log::info!("Android VPN bridge: config prepared, waiting for plugin to start service");
+        Ok(())
+    }
+
+    pub fn stop(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        self.running = false;
+        std::env::remove_var("PIXEL_VPN_CONFIG");
+        log::info!("Android VPN bridge: stopped");
+        Ok(())
+    }
+
+    pub fn is_running(&self) -> bool {
+        self.running
+    }
+
+    pub fn take_config(&self) -> Option<String> {
+        std::env::var("PIXEL_VPN_CONFIG").ok()
+    }
+}
+
+#[cfg(target_os = "android")]
+impl Drop for AndroidVpnBridge {
     fn drop(&mut self) {
         let _ = self.stop();
     }

@@ -152,6 +152,61 @@ impl XrayConfig {
         }
     }
 
+    /// Android variant: no TUN inbound (VpnService provides TUN externally),
+    /// only SOCKS inbound for libXray to proxy through.
+    #[cfg(target_os = "android")]
+    pub fn build_for_android(
+        server: &ServerConfig,
+        routing_mode: &RoutingMode,
+        bypass_domains: &[String],
+        bypass_ips: &[String],
+    ) -> Self {
+        let proxy_outbound = Self::build_vless_outbound(server);
+        let routing = Self::build_routing(routing_mode, bypass_domains, bypass_ips, true);
+
+        Self {
+            log: LogConfig {
+                loglevel: "warning".to_string(),
+            },
+            inbounds: vec![
+                Inbound {
+                    tag: "socks-in".to_string(),
+                    port: Some(SOCKS_INBOUND_PORT),
+                    listen: Some("127.0.0.1".to_string()),
+                    protocol: "socks".to_string(),
+                    settings: serde_json::json!({
+                        "auth": "noauth",
+                        "udp": true
+                    }),
+                    sniffing: Some(SniffingConfig {
+                        enabled: true,
+                        dest_override: vec![
+                            "http".to_string(),
+                            "tls".to_string(),
+                            "quic".to_string(),
+                        ],
+                    }),
+                },
+            ],
+            outbounds: vec![
+                proxy_outbound,
+                Outbound {
+                    tag: "direct".to_string(),
+                    protocol: "freedom".to_string(),
+                    settings: None,
+                    stream_settings: None,
+                },
+                Outbound {
+                    tag: "block".to_string(),
+                    protocol: "blackhole".to_string(),
+                    settings: None,
+                    stream_settings: None,
+                },
+            ],
+            routing: Some(routing),
+        }
+    }
+
     fn build_vless_outbound(server: &ServerConfig) -> Outbound {
         let mut stream = serde_json::json!({
             "network": server.network.as_deref().unwrap_or("tcp"),
