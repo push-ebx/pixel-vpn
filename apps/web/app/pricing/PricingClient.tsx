@@ -34,16 +34,16 @@ export default function PricingClient({ initialPlans }: PricingClientProps) {
     }
   }, [isInitialized, checkAuth]);
 
-  const handlePurchase = async (planId: string) => {
+  const handlePurchase = async (plan: Plan) => {
     if (!user) {
       router.push("/login");
       return;
     }
 
     setPaymentError(null);
-    setPurchasing(planId);
+    setPurchasing(plan.id);
     try {
-      const { data, error } = await api.createPaymentIntent(planId);
+      const { data, error } = await api.createPaymentIntent({ planCode: plan.code });
       if (error) {
         setPaymentError(error);
         return;
@@ -167,7 +167,7 @@ export default function PricingClient({ initialPlans }: PricingClientProps) {
                     <button
                       type="button"
                       className="w-full px-4 py-3 bg-accent hover:bg-accent-hover text-white font-medium rounded-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                      onClick={() => handlePurchase(plan.id)}
+                      onClick={() => handlePurchase(plan)}
                       disabled={purchasing === plan.id}
                     >
                       {purchasing === plan.id ? "Загрузка..." : user ? "Приобрести" : "Войти для покупки"}

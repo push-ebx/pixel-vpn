@@ -1,6 +1,9 @@
 node_modules/
 dist/
 target/
+.next/
+**/.next/
+*.tsbuildinfo
 .env
 *.log
 .DS_Store

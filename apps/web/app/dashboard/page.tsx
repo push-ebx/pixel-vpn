@@ -55,16 +55,21 @@ export default function DashboardPage() {
       if (!user) return;
       
       setIsLoading(true);
-      const [subRes, vlessRes] = await Promise.all([
-        api.getSubscription(),
-        api.getVless(),
-      ]);
+      const subRes = await api.getSubscription();
       
       if (subRes.data) {
         setSubscription(subRes.data);
       }
-      if (vlessRes.data?.vless) {
-        setVless(vlessRes.data.vless);
+
+      if (subRes.data?.active) {
+        const vlessRes = await api.getVless();
+        if (vlessRes.data?.vless) {
+          setVless(vlessRes.data.vless);
+        } else {
+          setVless(null);
+        }
+      } else {
+        setVless(null);
       }
       setIsLoading(false);
     };

@@ -1,4 +1,26 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.pixel-vpn.ru";
+const AUTH_TOKEN_STORAGE_KEY = "pixel-vpn-web-auth-token";
+
+function readAuthToken() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  return window.localStorage.getItem(AUTH_TOKEN_STORAGE_KEY);
+}
+
+function writeAuthToken(token: string | null) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  if (token) {
+    window.localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
+    return;
+  }
+
+  window.localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+}
 
 interface ApiResponse<T> {
   data?: T;
@@ -10,18 +32,27 @@ async function fetchApi<T>(
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
   try {
+    const token = readAuthToken();
+    const headers = new Headers(options.headers);
+    headers.set("Content-Type", "application/json");
+
+    if (token) {
+      headers.set("Authorization", `Bearer ${token}`);
+    }
+
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
-      headers: {
-        "Content-Type": "application/json",
-        credentials: "include",
-        ...options.headers,
-      },
+      credentials: "include",
+      headers,
     });
 
     const data = await response.json();
 
     if (!response.ok) {
+      if (response.status === 401) {
+        writeAuthToken(null);
+      }
+
       return { error: data.error || "Произошла ошибка" };
     }
 
@@ -38,6 +69,7 @@ interface User {
 }
 
 interface AuthResponse {
+  accessToken: string;
   user: User;
 }
 
@@ -90,21 +122,35 @@ interface PaymentIntent {
 
 // Auth API
 export async function register(email: string, password: string): Promise<ApiResponse<AuthResponse>> {
-  return fetchApi<AuthResponse>("/api/auth/register", {
+  const response = await fetchApi<AuthResponse>("/api/auth/register", {
     method: "POST",
     body: JSON.stringify({ email, password }),
   });
+
+  if (response.data?.accessToken) {
+    writeAuthToken(response.data.accessToken);
+  }
+
+  return response;
 }
 
 export async function login(email: string, password: string): Promise<ApiResponse<AuthResponse>> {
-  return fetchApi<AuthResponse>("/api/auth/login", {
+  const response = await fetchApi<AuthResponse>("/api/auth/login", {
     method: "POST",
     body: JSON.stringify({ email, password }),
   });
+
+  if (response.data?.accessToken) {
+    writeAuthToken(response.data.accessToken);
+  }
+
+  return response;
 }
 
 export async function logout(): Promise<ApiResponse<void>> {
-  return fetchApi<void>("/api/auth/logout", { method: "POST" });
+  const response = await fetchApi<void>("/api/auth/logout", { method: "POST" });
+  writeAuthToken(null);
+  return response;
 }
 
 export async function getMe(): Promise<ApiResponse<{ user: User }>> {
@@ -126,10 +172,10 @@ export async function getPlans(): Promise<ApiResponse<{ plans: Plan[] }>> {
 }
 
 // Payments API
-export async function createPaymentIntent(planId: string): Promise<ApiResponse<{ paymentIntent: PaymentIntent }>> {
+export async function createPaymentIntent(input: { planId?: string; planCode?: string }): Promise<ApiResponse<{ paymentIntent: PaymentIntent }>> {
   return fetchApi<{ paymentIntent: PaymentIntent }>("/api/payments/intents", {
     method: "POST",
-    body: JSON.stringify({ planId }),
+    body: JSON.stringify(input),
   });
 }
 

@@ -8,6 +8,9 @@ pnpm docker:up
 
 Server API will be available at `http://localhost:8787`.
 
+`server` container reads extra app variables from `apps/server/.env`
+(for example `YOOKASSA_SHOP_ID` and `YOOKASSA_SECRET_KEY`).
+
 Stop all containers:
 
 ```bash

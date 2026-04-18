@@ -4,6 +4,8 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import * as api from "@/lib/api";
 
+const AUTH_TOKEN_STORAGE_KEY = "pixel-vpn-web-auth-token";
+
 interface User {
   id: string;
   email: string;
@@ -58,11 +60,25 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       checkAuth: async () => {
+        const hasToken =
+          typeof window !== "undefined" &&
+          Boolean(window.localStorage.getItem(AUTH_TOKEN_STORAGE_KEY));
+
+        if (!hasToken) {
+          set({
+            user: null,
+            isLoading: false,
+            isInitialized: true,
+          });
+          return;
+        }
+
         set({ isLoading: true });
         const { data, error } = await api.getMe();
 
         if (error) {
           set({
+            user: null,
             isLoading: false,
             isInitialized: true,
           });
