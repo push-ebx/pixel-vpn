@@ -14,6 +14,13 @@ Stop all containers:
 pnpm docker:down
 ```
 
+If you changed MySQL credentials or got access errors (`P1010`), recreate MySQL volume:
+
+```bash
+docker compose -f docker/docker-compose.yml down -v
+pnpm docker:up
+```
+
 View API logs:
 
 ```bash
@@ -26,3 +33,7 @@ You can override values from your shell before `pnpm docker:up`:
 
 - `JWT_SECRET`
 - `CORS_ORIGIN`
+- `MYSQL_ROOT_PASSWORD`
+- `MYSQL_DATABASE`
+- `MYSQL_USER`
+- `MYSQL_PASSWORD`

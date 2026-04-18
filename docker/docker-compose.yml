@@ -11,7 +11,8 @@ services:
     environment:
       NODE_ENV: production
       PORT: 8787
-      DATABASE_URL: mysql://pixelvpn:pixelvpn@mysql:3306/pixelvpn
+      DATABASE_URL: mysql://${MYSQL_USER:-pixelvpn}:${MYSQL_PASSWORD:-pixelvpn}@mysql:3306/${MYSQL_DATABASE:-pixelvpn}
+      DATABASE_ADMIN_URL: mysql://root:${MYSQL_ROOT_PASSWORD:-root}@mysql:3306/${MYSQL_DATABASE:-pixelvpn}
       JWT_SECRET: ${JWT_SECRET:-change_this_to_a_long_random_string_1234567890}
       CORS_ORIGIN: ${CORS_ORIGIN:-*}
     ports:
@@ -27,10 +28,11 @@ services:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: pixelvpn
-      MYSQL_USER: pixelvpn
-      MYSQL_PASSWORD: pixelvpn
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_ROOT_HOST: "%"
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-pixelvpn}
+      MYSQL_USER: ${MYSQL_USER:-pixelvpn}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-pixelvpn}
     ports:
       - "3307:3306"
     healthcheck:
