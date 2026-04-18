@@ -43,7 +43,7 @@ export function FooterClient() {
             href="https://t.me/pixel_v_p_n"
             target="_blank"
             rel="noopener noreferrer"
-            className="px-2 border border-border inline-flex items-center justify-center text-text-secondary hover:text-accent hover:border-accent/40 transition-colors"
+            className="uppercase px-2 border border-border inline-flex items-center justify-center text-text-secondary hover:text-accent hover:border-accent/40 transition-colors"
             aria-label="Telegram"
           >
             Telegram

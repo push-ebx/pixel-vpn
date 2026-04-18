@@ -9,6 +9,7 @@ const AUTH_TOKEN_STORAGE_KEY = "pixel-vpn-web-auth-token";
 interface User {
   id: string;
   email: string;
+  isAdmin: boolean;
 }
 
 interface AuthStore {
@@ -61,7 +62,11 @@ export const useAuthStore = create<AuthStore>()(
 
 checkAuth: async () => {
         const currentState = useAuthStore.getState();
-        if (currentState.isInitialized) {
+        const hasResolvedAdminFlag =
+          currentState.user === null ||
+          typeof (currentState.user as { isAdmin?: unknown }).isAdmin === "boolean";
+
+        if (currentState.isInitialized && hasResolvedAdminFlag) {
           return;
         }
 

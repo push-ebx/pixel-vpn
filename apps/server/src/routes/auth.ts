@@ -53,7 +53,8 @@ authRouter.post("/register", asyncHandler(async (req, res) => {
     accessToken,
     user: {
       id: user.id,
-      email: user.email
+      email: user.email,
+      isAdmin: user.isAdmin
     }
   });
 }));
@@ -92,7 +93,8 @@ authRouter.post("/login", asyncHandler(async (req, res) => {
     accessToken,
     user: {
       id: user.id,
-      email: user.email
+      email: user.email,
+      isAdmin: user.isAdmin
     }
   });
 }));
@@ -101,7 +103,7 @@ authRouter.get("/me", requireAuth, asyncHandler(async (req, res) => {
   const auth = getAuthUser(req);
   const user = await prisma.user.findUnique({
     where: { id: auth.id },
-    select: { id: true, email: true, createdAt: true }
+    select: { id: true, email: true, isAdmin: true, createdAt: true }
   });
 
   if (!user) {

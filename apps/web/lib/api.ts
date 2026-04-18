@@ -77,6 +77,7 @@ async function fetchApi<T>(
 interface User {
   id: string;
   email: string;
+  isAdmin: boolean;
 }
 
 interface AuthResponse {

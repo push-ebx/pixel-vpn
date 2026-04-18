@@ -45,7 +45,7 @@ export default function AdminPage() {
   useEffect(() => {
     if (isInitialized && !user) {
       router.replace("/login");
-    } else if (isInitialized && user && !(user as any).isAdmin) {
+    } else if (isInitialized && user && !user.isAdmin) {
       router.replace("/dashboard");
     }
   }, [user, isInitialized, router]);
