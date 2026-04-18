@@ -19,6 +19,7 @@ export function HeaderClient() {
             href="/"
             className="inline-flex items-center gap-2 text-[13px] md:text-[15px] font-pixel-title text-text-secondary hover:text-text-primary transition-colors"
           >
+            <img src="/logo.svg" alt="Pixel VPN" className="h-7 w-7 rounded-[3px] shrink-0" />
             <span>pixel-vpn</span>
             <span className="text-text-secondary/40">::</span>
             <span className="text-accent">главная</span>

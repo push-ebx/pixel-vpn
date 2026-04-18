@@ -22,11 +22,11 @@ export const metadata: Metadata = {
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [
+      { url: "/logo.svg", type: "image/svg+xml" },
       { url: "/favicon.ico", sizes: "any" },
-      { url: "/icon.png", type: "image/png" },
     ],
     apple: [{ url: "/apple-icon.png", type: "image/png" }],
-    shortcut: ["/favicon.ico"],
+    shortcut: ["/logo.svg"],
   },
   robots: {
     index: true,
@@ -79,7 +79,7 @@ export default function RootLayout({
       "@type": "Organization",
       name: SITE_NAME,
       url: SITE_URL,
-      logo: absoluteUrl("/icon.png"),
+      logo: absoluteUrl("/logo.svg"),
       sameAs: ["https://t.me/pixelvpn"],
     },
     {

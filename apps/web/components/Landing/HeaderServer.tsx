@@ -23,6 +23,7 @@ export async function HeaderServer() {
             href="/"
             className="inline-flex items-center gap-2 text-[13px] md:text-[15px] font-pixel-title text-text-secondary hover:text-text-primary transition-colors"
           >
+            <img src="/logo.svg" alt="Pixel VPN" className="h-7 w-7 rounded-[3px] shrink-0" />
             <span>pixel-vpn</span>
             <span className="text-text-secondary/40">::</span>
             <span className="text-accent">главная</span>
@@ -59,9 +60,7 @@ export async function FooterServer() {
       <div className="container mx-auto px-4">
         <div className="py-6 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 border border-accent bg-accent/15 text-accent flex items-center justify-center">
-              <span className="font-pixel-title text-[13px]">P</span>
-            </div>
+            <img src="/logo.svg" alt="Pixel VPN" className="h-6 w-6 rounded-[3px] shrink-0" />
             <p className="text-[14px] font-pixel-title text-text-secondary">
               pixel vpn
             </p>
