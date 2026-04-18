@@ -21,6 +21,8 @@ docker compose -f docker/docker-compose.yml down -v
 pnpm docker:up
 ```
 
+`db-init` now runs before server start and re-applies grants for `${MYSQL_USER}`.
+
 View API logs:
 
 ```bash

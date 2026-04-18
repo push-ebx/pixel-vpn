@@ -20,4 +20,4 @@ RUN pnpm --filter @pixel-vpn/server build
 
 EXPOSE 8787
 
-CMD ["sh", "-c", "DATABASE_URL=${DATABASE_ADMIN_URL:-$DATABASE_URL} pnpm --filter @pixel-vpn/server prisma:push && pnpm --filter @pixel-vpn/server start"]
+CMD ["sh", "-c", "pnpm --filter @pixel-vpn/server prisma:push && pnpm --filter @pixel-vpn/server start"]
