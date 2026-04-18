@@ -41,6 +41,13 @@ authRouter.post("/register", asyncHandler(async (req, res) => {
     email: user.email
   });
 
+  res.cookie("pixel-vpn-web-auth-token", accessToken, {
+    httpOnly: false,
+    maxAge: 60 * 60 * 24 * 30,
+    sameSite: "lax",
+    path: "/"
+  });
+
   return res.status(201).json({
     accessToken,
     user: {
@@ -70,6 +77,13 @@ authRouter.post("/login", asyncHandler(async (req, res) => {
   const accessToken = signAccessToken({
     sub: user.id,
     email: user.email
+  });
+
+  res.cookie("pixel-vpn-web-auth-token", accessToken, {
+    httpOnly: false,
+    maxAge: 60 * 60 * 24 * 30,
+    sameSite: "lax",
+    path: "/"
   });
 
   return res.json({

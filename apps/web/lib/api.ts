@@ -1,5 +1,16 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.pixel-vpn.ru";
 const AUTH_TOKEN_STORAGE_KEY = "pixel-vpn-web-auth-token";
+const AUTH_TOKEN_COOKIE_NAME = "pixel-vpn-web-auth-token";
+
+function getAuthCookieOptions() {
+  return {
+    path: "/",
+    httpOnly: false,
+    sameSite: "lax" as const,
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 60 * 60 * 24 * 30,
+  };
+}
 
 function readAuthToken() {
   if (typeof window === "undefined") {
@@ -217,6 +228,9 @@ interface PromoCodeApply {
     name: string;
     originalPrice: number;
     durationDays: number;
+  };
+  promoCode?: {
+    id: string;
   };
 }
 

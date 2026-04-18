@@ -1,5 +1,7 @@
 import PricingClient, { Plan } from "./PricingClient";
 import type { Metadata } from "next";
+import { HeaderClient } from "@/components/Landing/HeaderClient";
+import { FooterClient } from "@/components/Landing/FooterClient";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL, absoluteUrl } from "@/lib/seo";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.pixel-vpn.ru";
@@ -72,12 +74,14 @@ export default async function PricingPage() {
   };
 
   return (
-    <>
+    <main className="min-h-screen bg-background text-text-primary">
+      <HeaderClient />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(pricingStructuredData) }}
       />
       <PricingClient initialPlans={plans} />
-    </>
+      <FooterClient />
+    </main>
   );
 }

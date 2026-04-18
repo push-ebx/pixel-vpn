@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect } from "react";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/auth";
+import { useEffect } from "react";
 
-export function Header() {
-  const { user, isInitialized, checkAuth } = useAuthStore();
+export function HeaderClient() {
+  const { user, checkAuth, isInitialized } = useAuthStore();
 
   useEffect(() => {
     checkAuth();
@@ -25,21 +25,21 @@ export function Header() {
           </Link>
 
           <div className="flex items-center gap-1">
-            {isInitialized && user ? (
+            {user ? (
               <Link
                 href="/dashboard"
                 className="h-10 px-3 inline-flex items-center border border-transparent text-[12px] md:text-[14px] font-pixel-title tracking-[0.06em] text-text-secondary hover:text-accent hover:border-border transition-colors"
               >
                 аккаунт
               </Link>
-            ) : isInitialized ? (
+            ) : (
               <Link
                 href="/login"
                 className="h-10 px-3 inline-flex items-center border border-transparent text-[12px] md:text-[14px] font-pixel-title tracking-[0.06em] text-text-secondary hover:text-accent hover:border-border transition-colors"
               >
                 вход
               </Link>
-            ) : null}
+            )}
           </div>
         </nav>
       </div>

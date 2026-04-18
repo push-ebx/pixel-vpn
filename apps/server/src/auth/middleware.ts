@@ -13,12 +13,15 @@ export type RequestWithAuth = Request & {
 
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
+  let token = authHeader?.startsWith("Bearer ") ? authHeader.slice("Bearer ".length).trim() : null;
 
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "Требуется авторизация" });
+  if (!token) {
+    token = req.cookies?.["pixel-vpn-web-auth-token"];
   }
 
-  const token = authHeader.slice("Bearer ".length).trim();
+  if (!token) {
+    return res.status(401).json({ error: "Требуется авторизация" });
+  }
 
   try {
     const payload = verifyAccessToken(token);

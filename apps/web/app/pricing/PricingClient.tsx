@@ -188,7 +188,11 @@ export default function PricingClient({ initialPlans }: PricingClientProps) {
 
     setCheckingPromo(plan.id);
     setPromoError(null);
-    setValidatedPromo(null);
+    setValidPromos((prev) => {
+      const copy = { ...prev };
+      delete copy[plan.id];
+      return copy;
+    });
 
     try {
       const { data, error } = await api.applyPromoCode({
@@ -214,13 +218,14 @@ export default function PricingClient({ initialPlans }: PricingClientProps) {
       }
 
       if (data.applied && data.finalPrice !== undefined) {
+        const promo = {
+          id: data.promoCode?.id || "",
+          discountPercent: data.discountPercent,
+          finalPrice: data.finalPrice,
+        };
         setValidPromos((prev) => ({
           ...prev,
-          [plan.id]: {
-            id: data.promoCode?.id || "",
-            discountPercent: data.discountPercent,
-            finalPrice: data.finalPrice,
-          },
+          [plan.id]: promo,
         }));
       }
     } catch {
