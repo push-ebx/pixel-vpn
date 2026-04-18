@@ -183,7 +183,7 @@ export async function getPlans(): Promise<ApiResponse<{ plans: Plan[] }>> {
 }
 
 // Payments API
-export async function createPaymentIntent(input: { planId?: string; planCode?: string }): Promise<ApiResponse<{ paymentIntent: PaymentIntent }>> {
+export async function createPaymentIntent(input: { planId?: string; planCode?: string; promoCode?: string }): Promise<ApiResponse<{ paymentIntent: PaymentIntent }>> {
   return fetchApi<{ paymentIntent: PaymentIntent }>("/api/payments/intents", {
     method: "POST",
     body: JSON.stringify(input),

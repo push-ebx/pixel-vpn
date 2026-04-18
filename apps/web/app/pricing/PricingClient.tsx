@@ -49,6 +49,7 @@ export default function PricingClient({ initialPlans }: PricingClientProps) {
   const [promoError, setPromoError] = useState<string | null>(null);
   const [validPromos, setValidPromos] = useState<Record<string, {
     id: string;
+    code: string;
     discountPercent: number;
     finalPrice: number;
   }>>({});
@@ -132,7 +133,11 @@ export default function PricingClient({ initialPlans }: PricingClientProps) {
     setPaymentError(null);
     setPurchasing(plan.id);
     try {
-      const { data, error } = await api.createPaymentIntent({ planCode: plan.code });
+      const appliedPromo = validPromos[plan.id];
+      const { data, error } = await api.createPaymentIntent({
+        planCode: plan.code,
+        ...(appliedPromo?.code ? { promoCode: appliedPromo.code } : {}),
+      });
       if (error) {
         setPaymentError(error);
         return;
@@ -234,6 +239,7 @@ export default function PricingClient({ initialPlans }: PricingClientProps) {
       if (data.applied && data.finalPrice !== undefined) {
         const promo = {
           id: data.promoCode?.id || "",
+          code,
           discountPercent: data.discountPercent,
           finalPrice: data.finalPrice,
         };

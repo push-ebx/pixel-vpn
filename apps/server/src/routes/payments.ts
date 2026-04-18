@@ -16,7 +16,8 @@ const planIdSchema = z.string().min(1).max(191);
 const createIntentSchema = z
   .object({
     planId: planIdSchema.optional(),
-    planCode: z.string().min(2).max(64).optional()
+    planCode: z.string().min(2).max(64).optional(),
+    promoCode: z.string().min(2).max(64).optional()
   })
   .refine((input) => Boolean(input.planId || input.planCode), {
     message: "Нужно передать planId или planCode"
@@ -38,7 +39,7 @@ paymentsRouter.post("/intents", requireAuth, asyncHandler(async (req, res) => {
     return res.status(400).json({ error: "Некорректные данные", details: parsed.error.flatten() });
   }
 
-  const { planId, planCode } = parsed.data;
+  const { planId, planCode, promoCode: promoCodeInput } = parsed.data;
   const plan = await prisma.plan.findFirst({
     where: {
       isActive: true,
@@ -51,15 +52,68 @@ paymentsRouter.post("/intents", requireAuth, asyncHandler(async (req, res) => {
     return res.status(404).json({ error: "Тариф не найден" });
   }
 
+  let amountRub = plan.priceRub;
+
+  if (promoCodeInput) {
+    const code = promoCodeInput.toUpperCase();
+    const now = new Date();
+
+    const promoCode = await prisma.promoCode.findUnique({
+      where: { code },
+      include: { planLinks: true }
+    });
+
+    if (!promoCode) {
+      return res.status(404).json({ error: "Промокод не найден" });
+    }
+
+    if (!promoCode.isActive) {
+      return res.status(400).json({ error: "Промокод деактивирован" });
+    }
+
+    if (promoCode.expiresAt && promoCode.expiresAt <= now) {
+      return res.status(400).json({ error: "Срок действия промокода истек" });
+    }
+
+    if (promoCode.maxUses !== null && promoCode.usedCount >= promoCode.maxUses) {
+      return res.status(400).json({ error: "Лимит использований исчерпан" });
+    }
+
+    if (promoCode.type === "ONETIME") {
+      const existingUsage = await prisma.promoCodeUsage.findUnique({
+        where: {
+          promoCodeId_userId: {
+            promoCodeId: promoCode.id,
+            userId: auth.id
+          }
+        }
+      });
+
+      if (existingUsage) {
+        return res.status(400).json({ error: "Вы уже использовали этот промокод" });
+      }
+    }
+
+    const applicablePlanIds = promoCode.planLinks.length > 0
+      ? promoCode.planLinks.map((link) => link.planId)
+      : [promoCode.planId];
+
+    if (!applicablePlanIds.includes(plan.id)) {
+      return res.status(400).json({ error: "Промокод не действует для выбранного тарифа" });
+    }
+
+    amountRub = Math.max(0, Math.round(plan.priceRub * (1 - promoCode.discountPercent / 100)));
+  }
+
   const expiresAt = new Date(Date.now() + config.PAYMENT_INTENT_TTL_MINUTES * 60_000);
 
-  if (plan.priceRub <= 0) {
+  if (amountRub <= 0) {
     const freeIntent = await prisma.paymentIntent.create({
       data: {
         userId: auth.id,
         planId: plan.id,
         amountRub: 0,
-        provider: "free",
+        provider: promoCodeInput ? "promocode" : "free",
         status: PaymentStatus.PENDING,
         expiresAt
       }
@@ -97,7 +151,7 @@ paymentsRouter.post("/intents", requireAuth, asyncHandler(async (req, res) => {
     data: {
       userId: auth.id,
       planId: plan.id,
-      amountRub: plan.priceRub,
+      amountRub,
       provider: "yookassa",
       status: PaymentStatus.PENDING,
       expiresAt
