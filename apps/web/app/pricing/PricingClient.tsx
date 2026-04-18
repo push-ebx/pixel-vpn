@@ -23,6 +23,20 @@ type PricingClientProps = {
   initialPlans: Plan[];
 };
 
+function formatDaysRu(days: number): string {
+  const value = Math.abs(days);
+  const mod10 = value % 10;
+  const mod100 = value % 100;
+
+  if (mod10 === 1 && mod100 !== 11) {
+    return `${days} день`;
+  }
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) {
+    return `${days} дня`;
+  }
+  return `${days} дней`;
+}
+
 export default function PricingClient({ initialPlans }: PricingClientProps) {
   const { user, isInitialized, checkAuth } = useAuthStore();
   const router = useRouter();
@@ -293,7 +307,7 @@ export default function PricingClient({ initialPlans }: PricingClientProps) {
                         <span className="text-text-secondary ml-1">₽</span>
                       </div>
                     )}
-                    <div className="text-sm text-text-secondary mb-6">{plan.durationDays} дней</div>
+                    <div className="text-sm text-text-secondary mb-6">{formatDaysRu(plan.durationDays)}</div>
 
                     <ul className="space-y-3">
                       <li className="flex items-center gap-2 text-sm">

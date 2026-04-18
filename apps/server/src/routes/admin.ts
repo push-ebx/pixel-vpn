@@ -1,13 +1,13 @@
 import { Router } from "express";
 import { z } from "zod";
 
-import { getAuthUser, requireAdmin } from "../auth/middleware";
+import { requireAdmin, requireAuth } from "../auth/middleware";
 import { asyncHandler } from "../lib/async-handler";
 import { prisma } from "../lib/prisma";
 
 const adminRouter = Router();
 
-adminRouter.use(requireAdmin);
+adminRouter.use(requireAuth, requireAdmin);
 
 const createPromoCodeSchema = z.object({
   code: z.string().min(2).max(64),
