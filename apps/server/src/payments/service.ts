@@ -95,7 +95,7 @@ async function extendXuiUserSubscription(
 }
 
 export async function markPaymentIntentPaid(intentId: string, userId?: string) {
-  return prisma.$transaction(async (tx) => {
+  const txResult = await prisma.$transaction(async (tx) => {
     const intent = await tx.paymentIntent.findUnique({
       where: { id: intentId },
       include: { plan: true }
@@ -110,7 +110,10 @@ export async function markPaymentIntentPaid(intentId: string, userId?: string) {
     }
 
     if (intent.status === PaymentStatus.PAID) {
-      return intent;
+      return {
+        paymentIntent: intent,
+        xuiAction: "none" as const
+      };
     }
 
     if (intent.status !== PaymentStatus.PENDING) {
@@ -140,24 +143,6 @@ export async function markPaymentIntentPaid(intentId: string, userId?: string) {
         xuiInboundId: true
       }
     });
-
-    const hasExistingVpnAccount = Boolean(user?.vpnUuid);
-
-    if (!hasExistingVpnAccount) {
-      const { uuid } = await createXuiUserIfNeeded(
-        intent.userId,
-        intent.userId,
-        intent.plan.durationDays
-      );
-      void uuid;
-    } else if (user?.xuiEmail && user?.xuiInboundId != null) {
-      await extendXuiUserSubscription(
-        intent.userId,
-        user.xuiEmail,
-        user.xuiInboundId,
-        intent.plan.durationDays
-      );
-    }
 
     const currentSubscription = await tx.subscription.findUnique({
       where: { userId: intent.userId }
@@ -196,8 +181,52 @@ export async function markPaymentIntentPaid(intentId: string, userId?: string) {
       });
     }
 
-    return updatedIntent;
+    if (!user?.vpnUuid) {
+      return {
+        paymentIntent: updatedIntent,
+        xuiAction: "create" as const,
+        xuiPayload: {
+          userId: intent.userId,
+          durationDays: intent.plan.durationDays
+        }
+      };
+    }
+
+    if (user.xuiEmail && user.xuiInboundId != null) {
+      return {
+        paymentIntent: updatedIntent,
+        xuiAction: "extend" as const,
+        xuiPayload: {
+          userId: intent.userId,
+          email: user.xuiEmail,
+          inboundId: user.xuiInboundId,
+          durationDays: intent.plan.durationDays
+        }
+      };
+    }
+
+    return {
+      paymentIntent: updatedIntent,
+      xuiAction: "none" as const
+    };
   });
+
+  if (txResult.xuiAction === "create") {
+    await createXuiUserIfNeeded(
+      txResult.xuiPayload.userId,
+      txResult.xuiPayload.userId,
+      txResult.xuiPayload.durationDays
+    );
+  } else if (txResult.xuiAction === "extend") {
+    await extendXuiUserSubscription(
+      txResult.xuiPayload.userId,
+      txResult.xuiPayload.email,
+      txResult.xuiPayload.inboundId,
+      txResult.xuiPayload.durationDays
+    );
+  }
+
+  return txResult.paymentIntent;
 }
 
 export async function syncPaymentIntentStatus(intentId: string) {
