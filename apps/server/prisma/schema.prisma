@@ -49,7 +49,8 @@ model Plan {
   updatedAt      DateTime        @updatedAt
   paymentIntents PaymentIntent[]
   subscriptions  Subscription[]
-  promoCodes    PromoCode[]
+  promoCodes     PromoCode[]
+  promoCodeLinks PromoCodePlan[]
 
   @@index([isActive, order])
 }
@@ -112,11 +113,24 @@ model PromoCode {
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
-  plan   Plan             @relation(fields: [planId], references: [id], onDelete: Restrict)
-  usages PromoCodeUsage[] @relation("PromoCodeUsages")
+  plan      Plan             @relation(fields: [planId], references: [id], onDelete: Restrict)
+  planLinks PromoCodePlan[]
+  usages    PromoCodeUsage[] @relation("PromoCodeUsages")
 
   @@index([code])
   @@index([isActive])
+}
+
+model PromoCodePlan {
+  promoCodeId String
+  planId      String
+  createdAt   DateTime @default(now())
+
+  promoCode PromoCode @relation(fields: [promoCodeId], references: [id], onDelete: Cascade)
+  plan      Plan      @relation(fields: [planId], references: [id], onDelete: Restrict)
+
+  @@id([promoCodeId, planId])
+  @@index([planId])
 }
 
 model PromoCodeUsage {

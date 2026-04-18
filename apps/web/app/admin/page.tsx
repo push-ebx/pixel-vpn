@@ -14,13 +14,20 @@ interface PromoCode {
   isActive: boolean;
   expiresAt: string | null;
   createdAt: string;
-  plan: {
+  plan?: {
     id: string;
     code: string;
     name: string;
     priceRub: number;
     durationDays: number;
   };
+  plans: {
+    id: string;
+    code: string;
+    name: string;
+    priceRub: number;
+    durationDays: number;
+  }[];
 }
 
 export default function AdminPage() {
@@ -34,9 +41,22 @@ export default function AdminPage() {
     discountPercent: 50,
     maxUses: "",
     type: "ONETIME" as "ONETIME" | "PERMANENT",
-    planId: "",
+    planIds: [] as string[],
   });
   const [plans, setPlans] = useState<{ id: string; code: string; name: string; priceRub: number; durationDays: number }[]>([]);
+
+  const normalizePromoCode = (promoCode: PromoCode): PromoCode => {
+    const normalizedPlans = promoCode.plans?.length
+      ? promoCode.plans
+      : promoCode.plan
+        ? [promoCode.plan]
+        : [];
+
+    return {
+      ...promoCode,
+      plans: normalizedPlans,
+    };
+  };
 
   useEffect(() => {
     checkAuth();
@@ -63,7 +83,7 @@ export default function AdminPage() {
       });
       const data = await res.json();
       if (data.promoCodes) {
-        setPromoCodes(data.promoCodes);
+        setPromoCodes(data.promoCodes.map(normalizePromoCode));
       }
       if (data.plans) {
         setPlans(data.plans);
@@ -103,9 +123,9 @@ export default function AdminPage() {
       });
       const data = await res.json();
       if (data.promoCode) {
-        setPromoCodes([data.promoCode, ...promoCodes]);
+        setPromoCodes([normalizePromoCode(data.promoCode), ...promoCodes]);
         setShowForm(false);
-        setFormData({ code: "", discountPercent: 50, maxUses: "", type: "ONETIME", planId: "" });
+        setFormData({ code: "", discountPercent: 50, maxUses: "", type: "ONETIME", planIds: [] });
       } else {
         alert(data.error || "Ошибка");
       }
@@ -124,7 +144,7 @@ export default function AdminPage() {
       });
       const data = await res.json();
       if (data.promoCode) {
-        setPromoCodes(promoCodes.map((pc) => (pc.id === id ? data.promoCode : pc)));
+        setPromoCodes(promoCodes.map((pc) => (pc.id === id ? normalizePromoCode(data.promoCode) : pc)));
       }
     } catch (err) {
       console.error(err);
@@ -153,6 +173,18 @@ export default function AdminPage() {
       </div>
     );
   }
+
+  const togglePlanInForm = (planId: string) => {
+    setFormData((prev) => {
+      const exists = prev.planIds.includes(planId);
+      return {
+        ...prev,
+        planIds: exists
+          ? prev.planIds.filter((id) => id !== planId)
+          : [...prev.planIds, planId],
+      };
+    });
+  };
 
   return (
     <div className="min-h-screen bg-background text-text-primary">
@@ -226,25 +258,31 @@ export default function AdminPage() {
                   placeholder="Без лимита"
                 />
               </div>
-              <div>
-                <label className="block text-sm text-text-secondary mb-1">Тариф</label>
-                <select
-                  value={formData.planId}
-                  onChange={(e) => setFormData({ ...formData, planId: e.target.value })}
-                  className="w-full px-3 py-2 bg-background border border-border rounded text-text-primary"
-                  required
-                >
-                  <option value="">Выберите тариф</option>
+              <div className="col-span-2">
+                <label className="block text-sm text-text-secondary mb-2">Тарифы (можно несколько)</label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 p-3 bg-background border border-border rounded">
                   {plans.map((plan) => (
-                    <option key={plan.id} value={plan.id}>
-                      {plan.name} ({plan.priceRub}₽ / {plan.durationDays || 30}д)
-                    </option>
+                    <label key={plan.id} className="flex items-center gap-2 text-sm text-text-primary">
+                      <input
+                        type="checkbox"
+                        checked={formData.planIds.includes(plan.id)}
+                        onChange={() => togglePlanInForm(plan.id)}
+                        className="w-4 h-4"
+                      />
+                      <span>
+                        {plan.name} ({plan.priceRub}₽ / {plan.durationDays || 30}д)
+                      </span>
+                    </label>
                   ))}
-                </select>
+                </div>
               </div>
             </div>
             <div className="flex gap-2">
-              <button type="submit" className="px-4 py-2 bg-accent text-white rounded hover:bg-accent-hover">
+              <button
+                type="submit"
+                disabled={formData.planIds.length === 0}
+                className="px-4 py-2 bg-accent text-white rounded hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed"
+              >
                 Создать
               </button>
               <button
@@ -272,7 +310,7 @@ export default function AdminPage() {
                 <div className="flex items-center gap-4">
                   <span className="font-mono font-medium">{pc.code}</span>
                   <span className="text-sm text-text-secondary">
-                    {pc.discountPercent}% на {pc.plan.name}
+                    {pc.discountPercent}% на {pc.plans.map((plan) => plan.name).join(", ")}
                   </span>
                   <span className="text-xs text-text-secondary">
                     {pc.usedCount}/{pc.maxUses || "∞"}

@@ -37,7 +37,12 @@ promoCodesRouter.post("/validate", asyncHandler(async (req, res) => {
 
   const promoCode = await prisma.promoCode.findUnique({
     where: { code: code.toUpperCase() },
-    include: { plan: true }
+    include: {
+      plan: true,
+      planLinks: {
+        include: { plan: true }
+      }
+    }
   });
 
   if (!promoCode) {
@@ -71,6 +76,10 @@ promoCodesRouter.post("/validate", asyncHandler(async (req, res) => {
     }
   }
 
+  const plans = promoCode.planLinks.length > 0
+    ? promoCode.planLinks.map((link) => link.plan)
+    : [promoCode.plan];
+
   return res.json({
     valid: true,
     promoCode: {
@@ -79,12 +88,19 @@ promoCodesRouter.post("/validate", asyncHandler(async (req, res) => {
       discountPercent: promoCode.discountPercent,
       type: mapPromoCodeType(promoCode.type),
       plan: {
-        id: promoCode.plan.id,
-        code: promoCode.plan.code,
-        name: promoCode.plan.name,
-        priceRub: promoCode.plan.priceRub,
-        durationDays: promoCode.plan.durationDays
-      }
+        id: plans[0].id,
+        code: plans[0].code,
+        name: plans[0].name,
+        priceRub: plans[0].priceRub,
+        durationDays: plans[0].durationDays
+      },
+      plans: plans.map((plan) => ({
+        id: plan.id,
+        code: plan.code,
+        name: plan.name,
+        priceRub: plan.priceRub,
+        durationDays: plan.durationDays
+      }))
     }
   });
 }));
@@ -115,7 +131,10 @@ promoCodesRouter.post("/apply", asyncHandler(async (req, res) => {
 
   const promoCode = await prisma.promoCode.findUnique({
     where: { code },
-    include: { plan: true }
+    include: {
+      plan: true,
+      planLinks: true
+    }
   });
 
   if (!promoCode) {
@@ -147,6 +166,14 @@ promoCodesRouter.post("/apply", asyncHandler(async (req, res) => {
     if (existingUsage) {
       return res.status(400).json({ error: "Вы уже использовали этот промокод" });
     }
+  }
+
+  const applicablePlanIds = promoCode.planLinks.length > 0
+    ? promoCode.planLinks.map((link) => link.planId)
+    : [promoCode.planId];
+
+  if (!applicablePlanIds.includes(plan.id)) {
+    return res.status(400).json({ error: "Промокод не действует для выбранного тарифа" });
   }
 
   const finalPrice = Math.round(plan.priceRub * (1 - promoCode.discountPercent / 100));
