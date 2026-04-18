@@ -1,9 +1,17 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { Send } from "lucide-react";
+import { useAuthStore } from "@/lib/auth";
 
 export function Footer() {
+  const { user, isInitialized, checkAuth } = useAuthStore();
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
   return (
     <footer className="bg-background border-t border-border">
       <div className="container mx-auto px-4">
@@ -21,12 +29,15 @@ export function Footer() {
             <Link href="/pricing" className="hover:text-accent transition-colors">
               тарифы
             </Link>
-            <Link href="/login" className="hover:text-accent transition-colors">
-              вход
-            </Link>
-            <Link href="/register" className="hover:text-accent transition-colors">
-              аккаунт
-            </Link>
+            {isInitialized && user ? (
+              <Link href="/dashboard" className="hover:text-accent transition-colors">
+                аккаунт
+              </Link>
+            ) : isInitialized ? (
+              <Link href="/login" className="hover:text-accent transition-colors">
+                вход
+              </Link>
+            ) : null}
           </nav>
 
           <a

@@ -9,6 +9,7 @@ import { authRouter } from "./routes/auth";
 import { healthRouter } from "./routes/health";
 import { paymentsRouter } from "./routes/payments";
 import { plansRouter } from "./routes/plans";
+import { promoCodesRouter } from "./routes/promocodes";
 import { subscriptionRouter } from "./routes/subscription";
 
 const app = express();
@@ -55,6 +56,7 @@ app.use("/api/health", healthRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/plans", plansRouter);
 app.use("/api/payments", paymentsRouter);
+app.use("/api/promocodes", promoCodesRouter);
 app.use("/api/subscription", subscriptionRouter);
 
 app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

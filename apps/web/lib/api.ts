@@ -188,3 +188,49 @@ export async function mockPaymentSuccess(intentId: string): Promise<ApiResponse<
     method: "POST",
   });
 }
+
+// Promo code types
+interface PromoCodeValidation {
+  id: string;
+  code: string;
+  discountPercent: number;
+  type: "onetime" | "permanent";
+  plan: {
+    id: string;
+    code: string;
+    name: string;
+    priceRub: number;
+    durationDays: number;
+  };
+}
+
+interface PromoCodeApply {
+  success: boolean;
+  applied: boolean;
+  free: boolean;
+  discountPercent: number;
+  finalPrice?: number;
+  message?: string;
+  plan?: {
+    id: string;
+    code: string;
+    name: string;
+    originalPrice: number;
+    durationDays: number;
+  };
+}
+
+// Promo code API
+export async function validatePromoCode(code: string): Promise<ApiResponse<{ valid: boolean; promoCode?: PromoCodeValidation; error?: string }>> {
+  return fetchApi<{ valid: boolean; promoCode?: PromoCodeValidation; error?: string }>("/api/promocodes/validate", {
+    method: "POST",
+    body: JSON.stringify({ code }),
+  });
+}
+
+export async function applyPromoCode(input: { planId?: string; planCode?: string; promoCode: string }): Promise<ApiResponse<PromoCodeApply>> {
+  return fetchApi<PromoCodeApply>("/api/promocodes/apply", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}

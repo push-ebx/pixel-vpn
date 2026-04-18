@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Check, ArrowLeft } from "lucide-react";
+import { Check, ArrowLeft, Tag, Loader2 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/Card";
+import { Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
 import { useAuthStore } from "@/lib/auth";
 import * as api from "@/lib/api";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -28,6 +30,14 @@ export default function PricingClient({ initialPlans }: PricingClientProps) {
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [isCheckingReturnedPayment, setIsCheckingReturnedPayment] = useState(false);
+  const [promoCodeInput, setPromoCodeInput] = useState("");
+  const [checkingPromo, setCheckingPromo] = useState<string | null>(null);
+  const [promoError, setPromoError] = useState<string | null>(null);
+  const [validPromos, setValidPromos] = useState<Record<string, {
+    id: string;
+    discountPercent: number;
+    finalPrice: number;
+  }>>({});
   const isMockPaymentEnabled = process.env.NEXT_PUBLIC_MOCK_PAYMENT === "true";
   const returnedPaymentIntentId = searchParams.get("payment_intent_id");
 
@@ -164,6 +174,62 @@ export default function PricingClient({ initialPlans }: PricingClientProps) {
     }
   };
 
+  const handleApplyPromoCode = async (plan: Plan) => {
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+
+    const code = promoCodeInput.trim();
+    if (!code) {
+      setPromoError("Введите промокод");
+      return;
+    }
+
+    setCheckingPromo(plan.id);
+    setPromoError(null);
+    setValidatedPromo(null);
+
+    try {
+      const { data, error } = await api.applyPromoCode({
+        planCode: plan.code,
+        promoCode: code,
+      });
+
+      if (error) {
+        setPromoError(error);
+        setCheckingPromo(null);
+        return;
+      }
+
+      if (!data) {
+        setPromoError("Ошибка применения промокода");
+        setCheckingPromo(null);
+        return;
+      }
+
+      if (data.free) {
+        router.push("/dashboard");
+        return;
+      }
+
+      if (data.applied && data.finalPrice !== undefined) {
+        setValidPromos((prev) => ({
+          ...prev,
+          [plan.id]: {
+            id: data.promoCode?.id || "",
+            discountPercent: data.discountPercent,
+            finalPrice: data.finalPrice,
+          },
+        }));
+      }
+    } catch {
+      setPromoError("Не удалось применить промокод");
+    } finally {
+      setCheckingPromo(null);
+    }
+  };
+
   const plans = initialPlans.filter((p) => p.code !== "trial-3d");
   const gridClass =
     plans.length <= 1
@@ -207,10 +273,21 @@ export default function PricingClient({ initialPlans }: PricingClientProps) {
                     {plan.description && <p className="text-sm text-text-secondary mt-1">{plan.description}</p>}
                   </CardHeader>
                   <CardContent className="flex-1">
-                    <div className="mb-4">
-                      <span className="text-4xl font-bold text-text-primary">{plan.priceRub}</span>
-                      <span className="text-text-secondary ml-1">₽</span>
-                    </div>
+                    {validPromos[plan.id] ? (
+                      <div className="mb-4">
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-3xl font-bold text-accent">{validPromos[plan.id].finalPrice}</span>
+                          <span className="text-text-secondary">₽</span>
+                          <span className="text-sm text-accent">(-{validPromos[plan.id].discountPercent}%)</span>
+                        </div>
+                        <div className="text-sm text-text-secondary line-through mt-1">{plan.priceRub} ₽</div>
+                      </div>
+                    ) : (
+                      <div className="mb-4">
+                        <span className="text-4xl font-bold text-text-primary">{plan.priceRub}</span>
+                        <span className="text-text-secondary ml-1">₽</span>
+                      </div>
+                    )}
                     <div className="text-sm text-text-secondary mb-6">{plan.durationDays} дней</div>
 
                     <ul className="space-y-3">
@@ -228,15 +305,52 @@ export default function PricingClient({ initialPlans }: PricingClientProps) {
                       </li>
                     </ul>
                   </CardContent>
-                  <CardFooter>
-                    <button
-                      type="button"
-                      className="w-full px-4 py-3 bg-accent hover:bg-accent-hover text-white font-medium rounded-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                      onClick={() => handlePurchase(plan)}
-                      disabled={purchasing === plan.id}
-                    >
-                      {purchasing === plan.id ? "Загрузка..." : user ? "Приобрести" : "Войти для покупки"}
-                    </button>
+                  <CardFooter className="space-y-3">
+                    {validPromos[plan.id] ? (
+                      <button
+                        type="button"
+                        className="w-full px-4 py-3 bg-accent hover:bg-accent-hover text-white font-medium rounded-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={() => handlePurchase(plan)}
+                        disabled={purchasing === plan.id}
+                      >
+                        {purchasing === plan.id ? "Загрузка..." : user ? "Оплатить со скидкой" : "Войти для покупки"}
+                      </button>
+                    ) : (
+                      <>
+                        <div className="flex gap-2">
+                          <div className="flex-1 relative">
+                            <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
+                            <input
+                              type="text"
+                              placeholder="Промокод"
+                              value={promoCodeInput}
+                              onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase())}
+                              className="w-full pl-9 pr-3 py-2 rounded-md bg-card border border-border text-text-primary placeholder:text-text-secondary/50 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
+                              disabled={checkingPromo === plan.id}
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            className="px-3 py-2 bg-secondary hover:bg-secondary-hover text-text-primary font-medium rounded-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm whitespace-nowrap"
+                            onClick={() => handleApplyPromoCode(plan)}
+                            disabled={checkingPromo === plan.id || !promoCodeInput.trim()}
+                          >
+                            {checkingPromo === plan.id ? <Loader2 className="w-4 h-4 animate-spin" /> : "Применить"}
+                          </button>
+                        </div>
+                        {promoError && plan.id === plans[0]?.id && (
+                          <p className="text-sm text-error text-center">{promoError}</p>
+                        )}
+                        <button
+                          type="button"
+                          className="w-full px-4 py-3 bg-accent hover:bg-accent-hover text-white font-medium rounded-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                          onClick={() => handlePurchase(plan)}
+                          disabled={purchasing === plan.id}
+                        >
+                          {purchasing === plan.id ? "Загрузка..." : user ? "Приобрести" : "Войти для покупки"}
+                        </button>
+                      </>
+                    )}
                   </CardFooter>
                 </Card>
               ))}

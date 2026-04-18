@@ -59,7 +59,12 @@ export const useAuthStore = create<AuthStore>()(
         set({ user: null });
       },
 
-      checkAuth: async () => {
+checkAuth: async () => {
+        const currentState = useAuthStore.getState();
+        if (currentState.isInitialized) {
+          return;
+        }
+
         const hasToken =
           typeof window !== "undefined" &&
           Boolean(window.localStorage.getItem(AUTH_TOKEN_STORAGE_KEY));

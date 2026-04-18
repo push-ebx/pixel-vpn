@@ -47,6 +47,7 @@ model Plan {
   updatedAt      DateTime        @updatedAt
   paymentIntents PaymentIntent[]
   subscriptions  Subscription[]
+  promoCodes    PromoCode[]
 }
 
 model PaymentIntent {
@@ -87,4 +88,41 @@ model Subscription {
   plan Plan @relation(fields: [planId], references: [id], onDelete: Restrict)
 
   @@index([status, endsAt])
+}
+
+enum PromoCodeType {
+  ONETIME
+  PERMANENT
+}
+
+model PromoCode {
+  id           String       @id @default(cuid())
+  code         String       @unique @db.VarChar(64)
+  discountPercent Int
+  maxUses      Int?
+  usedCount    Int          @default(0)
+  type         PromoCodeType @default(ONETIME)
+  planId       String
+  isActive     Boolean      @default(true)
+  expiresAt    DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  plan   Plan             @relation(fields: [planId], references: [id], onDelete: Restrict)
+  usages PromoCodeUsage[] @relation("PromoCodeUsages")
+
+  @@index([code])
+  @@index([isActive])
+}
+
+model PromoCodeUsage {
+  id         String   @id @default(cuid())
+  promoCodeId String
+  userId     String
+  usedAt     DateTime @default(now())
+
+  promoCode PromoCode @relation("PromoCodeUsages", fields: [promoCodeId], references: [id], onDelete: Cascade)
+
+  @@unique([promoCodeId, userId])
+  @@index([userId])
 }

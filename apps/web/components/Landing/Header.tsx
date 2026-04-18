@@ -1,8 +1,16 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
+import { useAuthStore } from "@/lib/auth";
 
 export function Header() {
+  const { user, isInitialized, checkAuth } = useAuthStore();
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 h-16 border-b border-border bg-card/95 backdrop-blur">
       <div className="container mx-auto h-full px-4">
@@ -17,24 +25,21 @@ export function Header() {
           </Link>
 
           <div className="flex items-center gap-1">
-            <Link
-              href="/pricing"
-              className="h-10 px-3 inline-flex items-center border border-transparent text-[12px] md:text-[14px] font-pixel-title tracking-[0.06em] text-text-secondary hover:text-accent hover:border-border transition-colors"
-            >
-              тарифы
-            </Link>
-            <Link
-              href="/login"
-              className="h-10 px-3 inline-flex items-center border border-transparent text-[12px] md:text-[14px] font-pixel-title tracking-[0.06em] text-text-secondary hover:text-accent hover:border-border transition-colors"
-            >
-              вход
-            </Link>
-            <Link
-              href="/register"
-              className="h-10 px-3 inline-flex items-center border border-transparent text-[12px] md:text-[14px] font-pixel-title tracking-[0.06em] text-text-secondary hover:text-accent hover:border-border transition-colors"
-            >
-              аккаунт
-            </Link>
+            {isInitialized && user ? (
+              <Link
+                href="/dashboard"
+                className="h-10 px-3 inline-flex items-center border border-transparent text-[12px] md:text-[14px] font-pixel-title tracking-[0.06em] text-text-secondary hover:text-accent hover:border-border transition-colors"
+              >
+                аккаунт
+              </Link>
+            ) : isInitialized ? (
+              <Link
+                href="/login"
+                className="h-10 px-3 inline-flex items-center border border-transparent text-[12px] md:text-[14px] font-pixel-title tracking-[0.06em] text-text-secondary hover:text-accent hover:border-border transition-colors"
+              >
+                вход
+              </Link>
+            ) : null}
           </div>
         </nav>
       </div>
