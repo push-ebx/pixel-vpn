@@ -15,13 +15,15 @@ services:
       - sh
       - -c
       - |
-        mysql -hmysql -uroot -p"$$MYSQL_ROOT_PASSWORD" <<SQL
+        mysql --protocol=socket -uroot -p"$$MYSQL_ROOT_PASSWORD" -S /var/run/mysqld/mysqld.sock <<SQL
         CREATE DATABASE IF NOT EXISTS \`$$MYSQL_DATABASE\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
         CREATE USER IF NOT EXISTS '$$MYSQL_USER'@'%' IDENTIFIED BY '$$MYSQL_PASSWORD';
         ALTER USER '$$MYSQL_USER'@'%' IDENTIFIED BY '$$MYSQL_PASSWORD';
         GRANT ALL PRIVILEGES ON \`$$MYSQL_DATABASE\`.* TO '$$MYSQL_USER'@'%';
         FLUSH PRIVILEGES;
         SQL
+    volumes:
+      - mysql-socket:/var/run/mysqld
     networks:
       - vpn
 
@@ -69,6 +71,7 @@ services:
       retries: 10
     volumes:
       - mysql-data:/var/lib/mysql
+      - mysql-socket:/var/run/mysqld
     networks:
       - vpn
 
@@ -96,3 +99,4 @@ networks:
 
 volumes:
   mysql-data:
+  mysql-socket:

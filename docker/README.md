@@ -14,14 +14,21 @@ Stop all containers:
 pnpm docker:down
 ```
 
-If you changed MySQL credentials or got access errors (`P1010`), recreate MySQL volume:
+If you changed Docker config for server image (for example OpenSSL fix), rebuild server image:
+
+```bash
+docker compose -f docker/docker-compose.yml build --no-cache server
+```
+
+If you got access errors (`P1010`):
+
+- `db-init` now connects to MySQL via socket as `root@localhost` and re-applies grants automatically.
+- If your data is disposable, the clean fallback is still full reset:
 
 ```bash
 docker compose -f docker/docker-compose.yml down -v
 pnpm docker:up
 ```
-
-`db-init` now runs before server start and re-applies grants for `${MYSQL_USER}`.
 
 View API logs:
 
