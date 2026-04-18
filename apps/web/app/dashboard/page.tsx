@@ -156,18 +156,6 @@ export default function DashboardPage() {
                 <CardContent>
                   <div className="space-y-3">
                     <div className="flex justify-between text-sm">
-                      <span className="text-text-secondary">Тариф:</span>
-                      <span className="text-text-primary font-medium">
-                        {subscription.subscription?.plan.name}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-text-secondary">Осталось дней:</span>
-                      <span className="text-accent font-medium">
-                        {subscription.subscription?.remainingDays}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-sm">
                       <span className="text-text-secondary">До окончания:</span>
                       <span className="text-accent font-medium">
                         {remainingMs !== null ? formatRemaining(remainingMs) : "—"}

@@ -34,6 +34,12 @@ function getAuthHeader() {
   return `Basic ${token}`;
 }
 
+function buildYooKassaReturnUrl(paymentIntentId: string) {
+  const url = new URL(config.PAYMENT_RETURN_URL);
+  url.searchParams.set("payment_intent_id", paymentIntentId);
+  return url.toString();
+}
+
 export function hasYooKassaCredentials() {
   const shopId = config.YOOKASSA_SHOP_ID?.trim();
   const secretKey = config.YOOKASSA_SECRET_KEY?.trim();
@@ -79,7 +85,7 @@ export async function createYooKassaPayment(input: YooKassaCreateInput) {
       capture: true,
       confirmation: {
         type: "redirect",
-        return_url: config.PAYMENT_RETURN_URL
+        return_url: buildYooKassaReturnUrl(input.paymentIntentId)
       },
       description: input.description.slice(0, 128),
       metadata: {

@@ -6,7 +6,7 @@ import { Check, ArrowLeft } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/Card";
 import { useAuthStore } from "@/lib/auth";
 import * as api from "@/lib/api";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export interface Plan {
   id: string;
@@ -24,15 +24,80 @@ type PricingClientProps = {
 export default function PricingClient({ initialPlans }: PricingClientProps) {
   const { user, isInitialized, checkAuth } = useAuthStore();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [isCheckingReturnedPayment, setIsCheckingReturnedPayment] = useState(false);
   const isMockPaymentEnabled = process.env.NEXT_PUBLIC_MOCK_PAYMENT === "true";
+  const returnedPaymentIntentId = searchParams.get("payment_intent_id");
 
   useEffect(() => {
     if (!isInitialized) {
       checkAuth();
     }
   }, [isInitialized, checkAuth]);
+
+  useEffect(() => {
+    if (!returnedPaymentIntentId || !isInitialized || !user) {
+      return;
+    }
+
+    let cancelled = false;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    const pollStatus = async (attempt: number) => {
+      if (cancelled) {
+        return;
+      }
+
+      setIsCheckingReturnedPayment(true);
+
+      const { data, error } = await api.getPaymentIntent(returnedPaymentIntentId);
+      if (cancelled) {
+        return;
+      }
+
+      if (error) {
+        setPaymentError(error);
+        setIsCheckingReturnedPayment(false);
+        return;
+      }
+
+      const status = data?.paymentIntent?.status;
+      if (status === "paid") {
+        router.replace("/dashboard");
+        return;
+      }
+
+      if (status === "pending" && attempt < 8) {
+        timeoutId = setTimeout(() => {
+          void pollStatus(attempt + 1);
+        }, 2000);
+        return;
+      }
+
+      if (status === "pending") {
+        setPaymentError("Платеж еще обрабатывается. Обновите страницу через несколько секунд.");
+      } else if (status === "canceled") {
+        setPaymentError("Платеж был отменен.");
+      } else if (status === "failed") {
+        setPaymentError("Платеж завершился с ошибкой.");
+      } else if (status === "expired") {
+        setPaymentError("Срок действия счета истек.");
+      }
+
+      setIsCheckingReturnedPayment(false);
+    };
+
+    void pollStatus(1);
+
+    return () => {
+      cancelled = true;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [returnedPaymentIntentId, isInitialized, user, router]);
 
   const handlePurchase = async (plan: Plan) => {
     if (!user) {
@@ -176,9 +241,10 @@ export default function PricingClient({ initialPlans }: PricingClientProps) {
                 </Card>
               ))}
             </div>
-            {paymentError && (
-              <p className="mt-4 text-center text-sm text-error">{paymentError}</p>
+            {isCheckingReturnedPayment && (
+              <p className="mt-4 text-center text-sm text-text-secondary">Проверяем статус оплаты...</p>
             )}
+            {paymentError && <p className="mt-4 text-center text-sm text-error">{paymentError}</p>}
           </>
         ) : (
           <div className="text-center py-12 text-text-secondary">Тарифы временно недоступны</div>
