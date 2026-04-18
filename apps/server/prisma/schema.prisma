@@ -41,6 +41,7 @@ model Plan {
   code           String          @unique @db.VarChar(64)
   name           String          @db.VarChar(120)
   description    String?         @db.VarChar(255)
+  order          Int             @default(0)
   priceRub       Int
   durationDays   Int
   isActive       Boolean         @default(true)
@@ -49,6 +50,8 @@ model Plan {
   paymentIntents PaymentIntent[]
   subscriptions  Subscription[]
   promoCodes    PromoCode[]
+
+  @@index([isActive, order])
 }
 
 model PaymentIntent {

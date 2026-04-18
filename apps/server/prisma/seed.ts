@@ -10,6 +10,7 @@ async function main() {
       code: "basic-30d",
       name: "Базовый на 30 дней",
       description: "Тариф для повседневного использования",
+      order: 10,
       priceRub: 299,
       durationDays: 30
     },
@@ -17,6 +18,7 @@ async function main() {
       code: "pro-90d",
       name: "Профи на 90 дней",
       description: "Выгодный тариф для постоянного использования",
+      order: 20,
       priceRub: 799,
       durationDays: 90
     }
@@ -29,6 +31,7 @@ async function main() {
       update: {
         name: plan.name,
         description: plan.description,
+        order: plan.order,
         priceRub: plan.priceRub,
         durationDays: plan.durationDays,
         isActive: true

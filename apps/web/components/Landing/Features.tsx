@@ -1,6 +1,6 @@
 "use client";
 
-import { Shield, Zap, Globe, Lock, Gauge, Headphones } from "lucide-react";
+import { Shield, Zap, Globe, Lock, Gauge, GitBranch } from "lucide-react";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 
 const features = [
@@ -36,7 +36,7 @@ const features = [
   },
   {
     code: "06",
-    icon: Headphones,
+    icon: GitBranch,
     title: "Туннелирование трафика",
     description: "Через VPN-туннель проходят только запросы к заблокированным сайтам",
   },

@@ -33,7 +33,7 @@ adminRouter.get("/promocodes", asyncHandler(async (req, res) => {
     }),
     prisma.plan.findMany({
       where: { isActive: true },
-      orderBy: { priceRub: "asc" }
+      orderBy: [{ order: "asc" }, { priceRub: "asc" }]
     })
   ]);
 

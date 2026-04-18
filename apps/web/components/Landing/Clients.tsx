@@ -23,9 +23,9 @@ const clients = [
   {
     icon: Smartphone,
     title: "iOS",
-    description: "Подключение через Shadowrocket/Stash",
+    description: "Подключение через Hiddify",
     href: "/install/ios",
-    status: "coming-soon",
+    status: "available",
   },
   {
     icon: Smartphone,
