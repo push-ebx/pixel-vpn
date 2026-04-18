@@ -32,14 +32,14 @@ export async function HeaderServer() {
             {auth?.isAuthenticated ? (
               <Link
                 href="/dashboard"
-                className="h-10 px-3 inline-flex items-center border border-transparent text-[12px] md:text-[14px] font-pixel-title tracking-[0.06em] text-text-secondary hover:text-accent hover:border-border transition-colors"
+                className="h-10 px-3 inline-flex items-center border border-transparent text-[12px] md:text-[12px] font-pixel-title tracking-[0.06em] text-text-secondary hover:text-accent hover:border-border transition-colors"
               >
                 аккаунт
               </Link>
             ) : (
               <Link
                 href="/login"
-                className="h-10 px-3 inline-flex items-center border border-transparent text-[12px] md:text-[14px] font-pixel-title tracking-[0.06em] text-text-secondary hover:text-accent hover:border-border transition-colors"
+                className="h-10 px-3 inline-flex items-center border border-transparent text-[16px] font-pixel-title tracking-[0.06em] text-text-secondary hover:text-accent hover:border-border transition-colors"
               >
                 вход
               </Link>
@@ -63,7 +63,7 @@ export async function FooterServer() {
               <span className="font-pixel-title text-[13px]">P</span>
             </div>
             <p className="text-[14px] font-pixel-title text-text-secondary">
-              pixel-vpn <span className="text-text-secondary/40">::</span> защищенный канал
+              pixel vpn
             </p>
           </div>
 

@@ -28,7 +28,7 @@ export function HeaderClient() {
             {user ? (
               <Link
                 href="/dashboard"
-                className="h-10 px-3 inline-flex items-center border border-transparent text-sm md:text-base font-pixel-title tracking-[0.06em] text-text-secondary hover:text-accent hover:border-border transition-colors"
+                className="h-10 px-3 inline-flex items-center border border-transparent text-[16px] font-pixel-title tracking-[0.06em] text-text-secondary hover:text-accent hover:border-border transition-colors"
               >
                 аккаунт
               </Link>

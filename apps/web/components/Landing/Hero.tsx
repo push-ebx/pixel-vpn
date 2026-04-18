@@ -13,11 +13,6 @@ export function Hero() {
       <div className="relative z-10 container mx-auto px-4">
         <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-4 w-full">
           <div className="pixel-card p-5 md:p-6">
-            <div className="inline-flex items-center gap-2 border border-accent/40 bg-accent/10 px-3 py-1 mb-4">
-              <Shield className="w-3.5 h-3.5 text-accent" />
-              <span className="text-[15px] font-pixel-title tracking-[0.08em] text-accent">ЗАЩИЩЕННЫЙ КАНАЛ АКТИВЕН</span>
-            </div>
-
             <h1 className="font-pixel-title text-2xl md:text-4xl tracking-[0.08em] leading-tight mb-4 text-text-primary">
               PIXEL VPN
               <br />
@@ -58,7 +53,7 @@ export function Hero() {
 
             <div className="space-y-3 mb-5">
               <div className="flex items-start gap-3">
-                <div className="w-8 h-8 border border-accent/40 bg-accent/10 flex items-center justify-center">
+                <div className="min-w-8 h-8 border border-accent/40 bg-accent/10 flex items-center justify-center">
                   <Zap className="w-4 h-4 text-accent" />
                 </div>
                 <div>
@@ -67,7 +62,7 @@ export function Hero() {
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <div className="w-8 h-8 border border-accent/40 bg-accent/10 flex items-center justify-center">
+                <div className="min-w-8 h-8 border border-accent/40 bg-accent/10 flex items-center justify-center">
                   <Lock className="w-4 h-4 text-accent" />
                 </div>
                 <div>
@@ -76,7 +71,7 @@ export function Hero() {
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <div className="w-8 h-8 border border-accent/40 bg-accent/10 flex items-center justify-center">
+                <div className="min-w-8 h-8 border border-accent/40 bg-accent/10 flex items-center justify-center">
                   <Globe className="w-4 h-4 text-accent" />
                 </div>
                 <div>

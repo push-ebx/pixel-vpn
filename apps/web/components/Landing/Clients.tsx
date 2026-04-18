@@ -67,11 +67,11 @@ export function Clients() {
             <div
               key={index}
               className={cn(
-                "p-4 md:p-5 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4",
+                "p-4 md:p-5 flex items-start sm:items-center gap-3 sm:gap-4",
                 index !== clients.length - 1 && "border-b border-border"
               )}
             >
-              <div className="w-9 h-9 border border-accent/40 bg-accent/10 flex items-center justify-center shrink-0">
+              <div className="w-8 h-8 border border-accent/40 bg-accent/10 flex items-center justify-center shrink-0">
                 <client.icon className="w-4 h-4 text-accent" />
               </div>
 
@@ -80,13 +80,13 @@ export function Clients() {
                 <p className="text-xs text-text-secondary terminal-text mt-1">{client.description}</p>
               </div>
 
-<div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
+              <div className="flex items-center justify-end gap-3 shrink-0 pt-0.5">
                 {client.status === "available" ? (
                   <Link href={client.href || "/install"}>
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="font-pixel-title text-[12.5px] tracking-[0.08em] text-accent uppercase"
+                      className="border-border font-pixel-title text-[12.5px] tracking-[0.08em] text-accent uppercase"
                     >
                       настроить
                     </Button>
