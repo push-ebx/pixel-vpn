@@ -11,9 +11,11 @@ import { markPaymentIntentPaid, syncPaymentIntentStatus } from "../payments/serv
 
 const paymentsRouter = Router();
 
+const planIdSchema = z.string().min(1).max(191);
+
 const createIntentSchema = z
   .object({
-    planId: z.string().cuid().optional(),
+    planId: planIdSchema.optional(),
     planCode: z.string().min(2).max(64).optional()
   })
   .refine((input) => Boolean(input.planId || input.planCode), {

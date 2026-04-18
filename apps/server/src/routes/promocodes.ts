@@ -8,12 +8,14 @@ import { prisma } from "../lib/prisma";
 const promoCodesRouter = Router();
 promoCodesRouter.use(requireAuth);
 
+const planIdSchema = z.string().min(1).max(191);
+
 const validatePromoCodeSchema = z.object({
   code: z.string().min(2).max(64)
 });
 
 const applyPromoCodeSchema = z.object({
-  planId: z.string().cuid().optional(),
+  planId: planIdSchema.optional(),
   planCode: z.string().min(2).max(64).optional(),
   promoCode: z.string().min(2).max(64)
 });

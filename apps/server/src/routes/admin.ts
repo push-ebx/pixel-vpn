@@ -9,12 +9,14 @@ const adminRouter = Router();
 
 adminRouter.use(requireAuth, requireAdmin);
 
+const planIdSchema = z.string().min(1).max(191);
+
 const createPromoCodeSchema = z.object({
   code: z.string().min(2).max(64),
   discountPercent: z.number().int().min(1).max(100),
-  maxUses: z.number().int().min(1).optional(),
+  maxUses: z.number().int().min(1).nullable().optional(),
   type: z.enum(["ONETIME", "PERMANENT"]),
-  planId: z.string().cuid(),
+  planId: planIdSchema,
   expiresAt: z.string().datetime().optional()
 });
 
