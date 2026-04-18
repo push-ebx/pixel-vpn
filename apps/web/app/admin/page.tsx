@@ -36,7 +36,7 @@ export default function AdminPage() {
     type: "ONETIME" as "ONETIME" | "PERMANENT",
     planId: "",
   });
-  const [plans, setPlans] = useState<{ id: string; code: string; name: string; priceRub: number }[]>([]);
+  const [plans, setPlans] = useState<{ id: string; code: string; name: string; priceRub: number; durationDays: number }[]>([]);
 
   useEffect(() => {
     checkAuth();
