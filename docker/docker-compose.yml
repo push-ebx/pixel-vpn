@@ -61,18 +61,6 @@ services:
     networks:
       - vpn
 
-  xray:
-    image: ghcr.io/xtls/xray-core:latest
-    container_name: pixel-vpn-xray
-    restart: unless-stopped
-    ports:
-      - "443:443"
-      - "443:443/udp"
-    volumes:
-      - ./xray/config.json:/etc/xray/config.json:ro
-    networks:
-      - vpn
-
 networks:
   vpn:
     driver: bridge
