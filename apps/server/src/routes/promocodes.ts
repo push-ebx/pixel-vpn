@@ -229,7 +229,7 @@ promoCodesRouter.post("/apply", asyncHandler(async (req, res) => {
 
   return res.json({
     success: true,
-    applied: false,
+    applied: true,
     free: false,
     discountPercent: promoCode.discountPercent,
     finalPrice,
