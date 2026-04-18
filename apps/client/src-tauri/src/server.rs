@@ -39,7 +39,7 @@ impl ServerConfig {
     pub fn from_vless_uri(uri: &str) -> Result<Self, String> {
         let uri = uri.trim();
         if !uri.starts_with("vless://") {
-            return Err("Not a VLESS URI".to_string());
+            return Err("Некорректный VLESS URI".to_string());
         }
 
         let without_scheme = &uri[8..];
@@ -57,21 +57,29 @@ impl ServerConfig {
         };
 
         // uuid@host:port
-        let at_pos = user_host.find('@').ok_or("Missing @ in VLESS URI")?;
+        let at_pos = user_host
+            .find('@')
+            .ok_or("В VLESS URI отсутствует символ @")?;
         let uuid = user_host[..at_pos].to_string();
         let host_port = &user_host[at_pos + 1..];
 
         // Handle IPv6: [::1]:443
         let (address, port) = if host_port.starts_with('[') {
-            let bracket_end = host_port.find(']').ok_or("Invalid IPv6 address")?;
+            let bracket_end = host_port
+                .find(']')
+                .ok_or("Некорректный IPv6-адрес")?;
             let addr = host_port[1..bracket_end].to_string();
             let port_str = &host_port[bracket_end + 2..]; // skip ]:
-            let port: u16 = port_str.parse().map_err(|_| "Invalid port")?;
+            let port: u16 = port_str.parse().map_err(|_| "Некорректный порт")?;
             (addr, port)
         } else {
-            let colon = host_port.rfind(':').ok_or("Missing port")?;
+            let colon = host_port
+                .rfind(':')
+                .ok_or("В VLESS URI отсутствует порт")?;
             let addr = host_port[..colon].to_string();
-            let port: u16 = host_port[colon + 1..].parse().map_err(|_| "Invalid port")?;
+            let port: u16 = host_port[colon + 1..]
+                .parse()
+                .map_err(|_| "Некорректный порт")?;
             (addr, port)
         };
 

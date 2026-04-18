@@ -87,16 +87,16 @@ export default function HomePage({ onOpenBilling }: HomePageProps) {
   }
 
   const statusText = isConnecting
-    ? "connecting..."
+    ? "подключение..."
     : status === "disconnecting"
-      ? "disconnecting..."
+      ? "отключение..."
       : isConnected
-        ? "connected"
-        : "disconnected";
+        ? "подключено"
+        : "отключено";
 
   return (
     <div className="h-full flex flex-col p-6">
-      <h1 className="font-pixel-title text-sm text-text-secondary mb-6">dashboard</h1>
+      <h1 className="font-pixel-title text-sm text-text-secondary mb-6">ГЛАВНАЯ</h1>
 
       <div className="flex-1 flex flex-col items-center justify-center gap-8">
         <button
@@ -107,24 +107,24 @@ export default function HomePage({ onOpenBilling }: HomePageProps) {
             transition-all duration-150 cursor-pointer
             disabled:cursor-not-allowed disabled:opacity-30
             ${isConnected
-              ? "border-text-primary bg-bg-card"
+              ? "border-accent bg-bg-card"
               : "border-border hover:border-text-secondary"
             }
           `}
         >
           <LogoLoader
             isLoading={isConnecting}
-            className="w-24 h-24 text-text-primary"
+            className={`w-24 h-24 ${isConnected ? "text-accent" : "text-text-primary"}`}
           />
         </button>
 
         <div className="flex flex-col items-center gap-1 text-center">
-          <span className={`font-pixel-title text-xs ${isConnected ? "success" : "text-text-secondary"}`}>
+          <span className={`font-pixel-title text-xs ${isConnected ? "text-accent" : "text-text-secondary"}`}>
             [{statusText}]
           </span>
           {connectedFor && (
             <span className="text-xs text-text-secondary terminal-text">
-              uptime: {connectedFor}
+              в сети: {connectedFor}
             </span>
           )}
         </div>
@@ -132,25 +132,25 @@ export default function HomePage({ onOpenBilling }: HomePageProps) {
         <div className="w-full max-w-xs">
           <div className="pixel-card p-3">
             {subscriptionLoading ? (
-              <span className="text-xs text-text-secondary">checking subscription...</span>
+              <span className="text-xs text-text-secondary">проверка подписки...</span>
             ) : subscriptionActive && subscription ? (
               <div className="flex flex-col gap-1">
                 <span className="text-xs text-text-secondary terminal-text">
-                  plan: <span className="text-text-primary">{subscription.plan.name}</span>
+                  тариф: <span className="text-text-primary">{subscription.plan.name}</span>
                 </span>
                 <span className="text-xs text-text-secondary terminal-text">
-                  expires: {new Date(subscription.endsAt).toLocaleDateString("ru-RU")}
+                  действует до: {new Date(subscription.endsAt).toLocaleDateString("ru-RU")}
                 </span>
               </div>
             ) : (
               <div className="flex items-center justify-between gap-3">
-                <span className="text-xs text-text-secondary">no active subscription</span>
+                <span className="text-xs text-text-secondary">нет активной подписки</span>
                 <button
                   type="button"
                   onClick={onOpenBilling}
                   className="pixel-button text-[10px] py-1.5 px-3"
                 >
-                  upgrade
+                  оформить
                 </button>
               </div>
             )}
@@ -169,7 +169,7 @@ export default function HomePage({ onOpenBilling }: HomePageProps) {
                   onClick={copyError}
                   className="text-[10px] text-text-secondary hover:text-text-primary"
                 >
-                  {copiedError ? "[copied]" : "[copy]"}
+                  {copiedError ? "[скопировано]" : "[копировать]"}
                 </button>
               </div>
             </div>

@@ -15,11 +15,23 @@ interface HelperStatus {
   running: boolean;
 }
 
+function isHelperStatus(value: unknown): value is HelperStatus {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "installed" in value &&
+    "running" in value &&
+    typeof (value as { installed: unknown }).installed === "boolean" &&
+    typeof (value as { running: unknown }).running === "boolean"
+  );
+}
+
 function App() {
   const [tab, setTab] = useState<Tab>("home");
   const { loadSettings, theme } = useVpnStore();
   const { authReady, user, hydrateAuth, loadPlans, loadSubscription } = useAccountStore();
   const isMobileUi = /android|iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isMacOs = /Mac/i.test(navigator.platform);
   const [showHelperBanner, setShowHelperBanner] = useState(false);
   const [isInstallingHelper, setIsInstallingHelper] = useState(false);
 
@@ -48,18 +60,22 @@ function App() {
   useEffect(() => {
     const checkHelper = async () => {
       try {
-        const status = await invoke<HelperStatus>("get_helper_status");
+        const status = await invoke<unknown>("get_helper_status");
+        if (!isHelperStatus(status)) {
+          console.warn("Неожиданный формат ответа helper", status);
+          return;
+        }
         if (!status.running) {
           setShowHelperBanner(true);
         }
       } catch (e) {
-        console.error("Failed to check helper:", e);
+        console.error("Не удалось проверить helper:", e);
       }
     };
-    if (user) {
+    if (user && isMacOs) {
       void checkHelper();
     }
-  }, [user]);
+  }, [isMacOs, user]);
 
   const handleInstallHelper = async () => {
     setIsInstallingHelper(true);
@@ -67,7 +83,7 @@ function App() {
       await invoke("install_helper");
       setShowHelperBanner(false);
     } catch (e) {
-      console.error("Failed to install helper:", e);
+      console.error("Не удалось установить helper:", e);
     } finally {
       setIsInstallingHelper(false);
     }
@@ -77,7 +93,7 @@ function App() {
     document.documentElement.setAttribute("data-theme", theme);
   }, [theme]);
 
-  const tabLabel = tab === "home" ? "home" : tab === "billing" ? "billing" : "settings";
+  const tabLabel = tab === "home" ? "главная" : tab === "billing" ? "подписка" : "настройки";
 
   return (
     <div className="h-screen overflow-hidden bg-bg-primary text-text-primary">
@@ -95,7 +111,7 @@ function App() {
                 type="button"
                 onClick={() => void invoke("window_minimize")}
                 className="w-6 h-6 flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-bg-card-hover transition-colors"
-                title="minimize"
+                title="свернуть"
               >
                 <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
                   <path d="M5 12h14" />
@@ -105,7 +121,7 @@ function App() {
                 type="button"
                 onClick={() => void invoke("window_close")}
                 className="w-6 h-6 flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-red-500/20 transition-colors"
-                title="close"
+                title="закрыть"
               >
                 <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
                   <path d="M6 6l12 12M18 6L6 18" />
@@ -132,18 +148,18 @@ function App() {
         )}
       </main>
 
-      {showHelperBanner && user && (
+      {showHelperBanner && user && isMacOs && (
         <div className="fixed bottom-16 left-3 right-3 z-50 pixel-card p-3 flex items-center justify-between">
           <div className="flex-1">
-            <p className="text-xs text-text-primary">install helper?</p>
-            <p className="text-[10px] text-text-secondary terminal-text">one-time password required</p>
+            <p className="text-xs text-text-primary">Установить helper?</p>
+            <p className="text-[10px] text-text-secondary terminal-text">Понадобится пароль администратора один раз</p>
           </div>
           <button
             onClick={handleInstallHelper}
             disabled={isInstallingHelper}
             className="pixel-button text-[10px]"
           >
-            {isInstallingHelper ? "..." : "install"}
+            {isInstallingHelper ? "..." : "установить"}
           </button>
         </div>
       )}
@@ -154,35 +170,39 @@ function App() {
             <TabButton
               active={tab === "home"}
               onClick={() => setTab("home")}
-              label="home"
+              label="главная"
               icon={
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955a1.126 1.126 0 011.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75" />
+                  <circle cx="12" cy="12" r="2.4" />
+                  <circle cx="6" cy="7" r="1.2" />
+                  <circle cx="18" cy="7" r="1.2" />
+                  <circle cx="6" cy="17" r="1.2" />
+                  <circle cx="18" cy="17" r="1.2" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.3 10.8L7.2 8.6m6.5 2.2 3.1-2.2m-6.5 4.4-3.1 2.2m6.5-2.2 3.1 2.2" />
                 </svg>
               }
             />
             <TabButton
               active={tab === "billing"}
               onClick={() => setTab("billing")}
-              label="billing"
+              label="оплата"
               icon={
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6h16.5M6 12h12m-9.75 6h7.5" />
+                  <rect x="3.5" y="6" width="17" height="12" rx="2.5" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.5 10h17M7 14h3.5M13 14h4" />
                 </svg>
               }
             />
             <TabButton
               active={tab === "settings"}
               onClick={() => setTab("settings")}
-              label="settings"
+              label="настройки"
               icon={
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                  <circle cx="12" cy="12" r="3" />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M12 2.75v1.5m0 15.5v1.5m9.25-9.25h-1.5m-15.5 0h-1.5m15.04-6.54l-1.06 1.06M6.27 17.73l-1.06 1.06m12.12 0l-1.06-1.06M6.27 6.27L5.21 5.21"
-                  />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 7h16M4 17h16M4 12h16" />
+                  <circle cx="9" cy="7" r="1.8" />
+                  <circle cx="15" cy="12" r="1.8" />
+                  <circle cx="11.5" cy="17" r="1.8" />
                 </svg>
               }
             />
@@ -210,8 +230,8 @@ function TabButton({
       className={`
         flex flex-col items-center justify-center gap-1 py-2.5 transition-colors
         ${active
-          ? "text-text-primary"
-          : "text-text-secondary hover:text-text-primary"}
+          ? "text-accent"
+          : "text-text-secondary hover:text-accent"}
       `}
     >
       {icon}

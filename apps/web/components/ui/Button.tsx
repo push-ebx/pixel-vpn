@@ -12,16 +12,16 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = "primary", size = "md", isLoading, disabled, children, ...props }, ref) => {
     const variants = {
-      primary: "bg-accent hover:bg-accent-hover text-white shadow-lg shadow-accent/25",
-      secondary: "bg-card hover:bg-card-hover text-text-primary border border-border",
-      ghost: "bg-transparent hover:bg-white/5 text-text-secondary hover:text-text-primary",
+      primary: "bg-accent hover:bg-accent-hover border border-accent hover:border-accent-hover text-white",
+      secondary: "bg-card hover:bg-card-hover border border-border text-text-primary",
+      ghost: "bg-transparent border border-transparent hover:border-border text-text-secondary hover:text-accent",
       danger: "bg-error hover:bg-red-600 text-white",
     };
 
     const sizes = {
-      sm: "px-3 py-1.5 text-sm",
-      md: "px-4 py-2 text-base",
-      lg: "px-6 py-3 text-lg",
+      sm: "px-3 py-1.5 text-[11px]",
+      md: "px-4 py-2 text-[12px]",
+      lg: "px-6 py-3 text-[13px]",
     };
 
     return (
@@ -29,9 +29,9 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         disabled={disabled || isLoading}
         className={cn(
-          "inline-flex items-center justify-center gap-2 font-medium rounded-md transition-all duration-200",
+          "inline-flex items-center justify-center gap-2 font-medium rounded-[3px] transition-colors duration-150",
           "disabled:opacity-50 disabled:cursor-not-allowed",
-          "focus:outline-none focus:ring-2 focus:ring-accent/50",
+          "focus:outline-none focus:ring-1 focus:ring-accent",
           variants[variant],
           sizes[size],
           className

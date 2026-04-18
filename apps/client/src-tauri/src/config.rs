@@ -169,6 +169,7 @@ impl XrayConfig {
     }
 
     #[cfg(not(target_os = "android"))]
+    #[allow(dead_code)]
     pub fn build_proxy_only(
         server: &ServerConfig,
         routing_mode: &RoutingMode,

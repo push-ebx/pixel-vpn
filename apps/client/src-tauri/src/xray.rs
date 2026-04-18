@@ -25,6 +25,7 @@ struct RouteState {
     server_ip: Ipv4Addr,
     original_gateway: Ipv4Addr,
     tun_next_hop: String,
+    #[allow(dead_code)]
     tun_interface_index: u32,
 }
 
@@ -763,6 +764,7 @@ impl CommandWindowsExt for std::process::Command {
     fn pipe_windows_no_window(&mut self) -> &mut Self {
         self.stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped())
+            .creation_flags(CREATE_NO_WINDOW)
     }
 
     fn creation_flags(&mut self, flags: u32) -> &mut Self {

@@ -1,4 +1,24 @@
 services:
+  server:
+    build:
+      context: ..
+      dockerfile: docker/server.Dockerfile
+    container_name: pixel-vpn-server
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 8787
+      DATABASE_URL: mysql://pixelvpn:pixelvpn@mysql:3306/pixelvpn
+      JWT_SECRET: ${JWT_SECRET:-change_this_to_a_long_random_string_1234567890}
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+    ports:
+      - "8787:8787"
+    networks:
+      - vpn
+
   mysql:
     image: mysql:8.4
     container_name: pixel-vpn-mysql

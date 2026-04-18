@@ -37,11 +37,11 @@ export default function ServersPage() {
 
   return (
     <div className="h-full flex flex-col gap-4 p-6">
-      <h1 className="font-pixel-title text-sm text-text-secondary">servers</h1>
+      <h1 className="font-pixel-title text-sm text-text-secondary">СЕРВЕРЫ</h1>
 
       <div className="pixel-card p-4 flex flex-col gap-3">
         <h3 className="text-xs font-pixel-title text-text-secondary">
-          import vless
+          импорт VLESS
         </h3>
         <textarea
           value={vlessInput}
@@ -58,20 +58,20 @@ export default function ServersPage() {
           disabled={importing || !vlessInput.trim()}
           className="pixel-button"
         >
-          {importing ? "..." : "add"}
+          {importing ? "..." : "добавить"}
         </button>
       </div>
 
       <div className="flex items-center justify-between">
         <h3 className="text-xs font-pixel-title text-text-secondary">
-          list [{servers.length}]
+          список [{servers.length}]
         </h3>
       </div>
 
       {servers.length === 0 ? (
         <div className="flex-1 flex items-center justify-center">
           <p className="text-xs text-text-secondary terminal-text">
-            no servers configured
+            серверы не добавлены
           </p>
         </div>
       ) : (
@@ -119,7 +119,7 @@ export default function ServersPage() {
                             : "error"
                       }`}
                     >
-                      {server.latency_ms}ms
+                      {server.latency_ms}мс
                     </span>
                   ) : (
                     <span className="text-[10px] text-text-secondary">

@@ -80,6 +80,12 @@ export type ApiSubscription = {
   plan: ApiPlan;
 };
 
+export type ApiVless = {
+  uuid: string;
+  link: string;
+  xuiEnabled?: boolean;
+};
+
 export type ApiPaymentIntent = {
   id: string;
   status: "pending" | "paid" | "failed" | "canceled" | "expired";
@@ -123,6 +129,12 @@ export async function getPlansApi() {
 
 export async function getCurrentSubscriptionApi(token: string) {
   return apiRequest<{ active: boolean; subscription: ApiSubscription | null }>("/subscription/current", {
+    token
+  });
+}
+
+export async function getSubscriptionVlessApi(token: string) {
+  return apiRequest<{ vless: ApiVless }>("/subscription/vless", {
     token
   });
 }

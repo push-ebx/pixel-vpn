@@ -36,6 +36,7 @@ export default function DashboardPage() {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [vless, setVless] = useState<VlessData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [remainingMs, setRemainingMs] = useState<number | null>(null);
 
   useEffect(() => {
     if (!isInitialized) {
@@ -72,6 +73,39 @@ export default function DashboardPage() {
       fetchData();
     }
   }, [user]);
+
+  useEffect(() => {
+    const endsAt = subscription?.subscription?.endsAt;
+    if (!endsAt) {
+      setRemainingMs(null);
+      return;
+    }
+
+    const endsAtMs = new Date(endsAt).getTime();
+    const updateRemaining = () => {
+      const diff = endsAtMs - Date.now();
+      setRemainingMs(diff > 0 ? diff : 0);
+    };
+
+    updateRemaining();
+    const intervalId = window.setInterval(updateRemaining, 60_000);
+    return () => window.clearInterval(intervalId);
+  }, [subscription?.subscription?.endsAt]);
+
+  const formatRemaining = (ms: number) => {
+    const totalMinutes = Math.floor(ms / 60_000);
+    const days = Math.floor(totalMinutes / (60 * 24));
+    const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+    const minutes = totalMinutes % 60;
+
+    if (days > 0) {
+      return `${days} д ${hours} ч ${minutes} мин`;
+    }
+    if (hours > 0) {
+      return `${hours} ч ${minutes} мин`;
+    }
+    return `${minutes} мин`;
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -143,6 +177,12 @@ export default function DashboardPage() {
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
+                      <span className="text-text-secondary">До окончания:</span>
+                      <span className="text-accent font-medium">
+                        {remainingMs !== null ? formatRemaining(remainingMs) : "—"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
                       <span className="text-text-secondary">Истекает:</span>
                       <span className="text-text-primary">
                         {new Date(subscription.subscription?.endsAt || "").toLocaleDateString("ru-RU")}
@@ -183,7 +223,7 @@ export default function DashboardPage() {
                         </div>
                         
                         <div>
-                          <label className="text-sm text-text-secondary mb-1 block">Ссылка для подключения</label>
+                          <label className="text-sm text-text-secondary mb-1 block">VLESS ключ</label>
                           <div className="flex items-center gap-2">
                             <code className="flex-1 px-3 py-2 bg-card rounded border border-border text-sm text-text-primary font-mono break-all">
                               {vless.link}

@@ -4,16 +4,16 @@ import type { ApiPlan } from "../lib/api";
 import { useAccountStore } from "../stores/account-store";
 
 const statusLabelMap: Record<string, string> = {
-  pending: "pending",
-  paid: "paid",
-  failed: "failed",
-  canceled: "canceled",
-  expired: "expired"
+  pending: "ожидает оплаты",
+  paid: "оплачено",
+  failed: "ошибка",
+  canceled: "отменено",
+  expired: "истекло"
 };
 
 function formatPrice(priceRub: number) {
   if (priceRub <= 0) {
-    return "free";
+    return "бесплатно";
   }
   return `${priceRub}₽`;
 }
@@ -36,7 +36,7 @@ function formatRemainingTime(days: number) {
   const totalMinutes = Math.max(0, Math.floor(days * 24 * 60));
   const fullDays = Math.floor(totalMinutes / (24 * 60));
   const hours = Math.floor((totalMinutes % (24 * 60)) / 60);
-  return `${fullDays}d ${hours}h`;
+  return `${fullDays}д ${hours}ч`;
 }
 
 export default function BillingPage() {
@@ -109,31 +109,31 @@ export default function BillingPage() {
 
   return (
     <div className="h-full flex flex-col gap-4 p-6">
-      <h1 className="font-pixel-title text-sm text-text-secondary">billing</h1>
+      <h1 className="font-pixel-title text-sm text-text-secondary">ПОДПИСКА</h1>
 
       <div className="pixel-card p-3 flex flex-col gap-1">
-        <p className="text-[10px] text-text-secondary terminal-text">subscription</p>
+        <p className="text-[10px] text-text-secondary terminal-text">подписка</p>
         {subscriptionLoading ? (
-          <p className="text-xs text-text-secondary">loading...</p>
+          <p className="text-xs text-text-secondary">загрузка...</p>
         ) : subscriptionActive && subscription ? (
           <div className="flex flex-col gap-0.5">
             <p className="text-xs text-text-primary font-pixel-title">{subscription.plan.name}</p>
             <p className="text-[10px] text-text-secondary terminal-text">
-              expires: {formatDate(subscription.endsAt)}
+              действует до: {formatDate(subscription.endsAt)}
             </p>
             <p className="text-[10px] text-text-secondary terminal-text">
-              remaining: {formatRemainingTime(subscription.remainingDays)}
+              осталось: {formatRemainingTime(subscription.remainingDays)}
             </p>
           </div>
         ) : (
-          <p className="text-xs text-text-secondary">inactive</p>
+          <p className="text-xs text-text-secondary">не активна</p>
         )}
       </div>
 
       <div className="flex flex-col gap-2">
-        <p className="text-xs font-pixel-title text-text-secondary">plans</p>
+        <p className="text-xs font-pixel-title text-text-secondary">тарифы</p>
         {plansLoading && (
-          <div className="pixel-card p-3 text-xs text-text-secondary">loading...</div>
+          <div className="pixel-card p-3 text-xs text-text-secondary">загрузка...</div>
         )}
         {plansError && (
           <div className="terminal-text error text-xs p-2">{plansError}</div>
@@ -145,7 +145,7 @@ export default function BillingPage() {
               <div>
                 <p className="text-xs text-text-primary">{plan.name}</p>
                 <p className="text-[10px] text-text-secondary terminal-text">
-                  {plan.durationDays}d · {formatPrice(plan.priceRub)}
+                  {plan.durationDays}д · {formatPrice(plan.priceRub)}
                 </p>
               </div>
               <button
@@ -154,7 +154,7 @@ export default function BillingPage() {
                 disabled={paymentLoading}
                 className="pixel-button text-[10px] py-1.5 px-3"
               >
-                {plan.priceRub <= 0 ? "activate" : "buy"}
+                {plan.priceRub <= 0 ? "активировать" : "оплатить"}
               </button>
             </div>
           ))}
@@ -165,13 +165,13 @@ export default function BillingPage() {
           <div>
             <p className="text-xs text-text-primary">{currentPayment.plan.name}</p>
             <p className="text-[10px] text-text-secondary terminal-text">
-              {currentPayment.amountRub}₽ · expires {formatDate(currentPayment.expiresAt)}
+              {currentPayment.amountRub}₽ · до {formatDate(currentPayment.expiresAt)}
             </p>
           </div>
 
           {currentPayment.status === "pending" && (
             <p className="text-[10px] text-text-secondary terminal-text">
-              waiting for payment...
+              ожидание оплаты...
             </p>
           )}
 
@@ -182,7 +182,7 @@ export default function BillingPage() {
           )}
 
           <p className="text-[10px] text-text-secondary terminal-text">
-            status: <span className="text-text-primary">{statusLabelMap[currentPayment.status] ?? currentPayment.status}</span>
+            статус: <span className="text-text-primary">{statusLabelMap[currentPayment.status] ?? currentPayment.status}</span>
           </p>
         </div>
       )}

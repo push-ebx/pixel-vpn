@@ -4,12 +4,14 @@ import {
   type ApiPaymentIntent,
   type ApiPlan,
   type ApiSubscription,
+  type ApiVless,
   type ApiUser,
   createPaymentIntentApi,
   getCurrentSubscriptionApi,
   getMeApi,
   getPaymentIntentApi,
   getPlansApi,
+  getSubscriptionVlessApi,
   loginApi,
   registerApi
 } from "../lib/api";
@@ -48,6 +50,10 @@ function normalizeError(error: unknown) {
   return "Неизвестная ошибка";
 }
 
+function isAuthError(error: unknown) {
+  return error instanceof ApiError && error.status === 401;
+}
+
 interface AccountState {
   token: string | null;
   user: ApiUser | null;
@@ -63,6 +69,9 @@ interface AccountState {
   subscription: ApiSubscription | null;
   subscriptionLoading: boolean;
   subscriptionError: string | null;
+  vless: ApiVless | null;
+  vlessLoading: boolean;
+  vlessError: string | null;
 
   currentPayment: ApiPaymentIntent | null;
   paymentLoading: boolean;
@@ -74,6 +83,7 @@ interface AccountState {
   logout: () => void;
   loadPlans: () => Promise<void>;
   loadSubscription: () => Promise<void>;
+  loadVless: () => Promise<void>;
   createPaymentIntent: (input: { planId?: string; planCode?: string }) => Promise<ApiPaymentIntent>;
   refreshPaymentIntent: (intentId: string) => Promise<void>;
   clearPayment: () => void;
@@ -95,6 +105,9 @@ export const useAccountStore = create<AccountState>((set, get) => ({
   subscription: null,
   subscriptionLoading: false,
   subscriptionError: null,
+  vless: null,
+  vlessLoading: false,
+  vlessError: null,
 
   currentPayment: null,
   paymentLoading: false,
@@ -179,6 +192,8 @@ export const useAccountStore = create<AccountState>((set, get) => ({
       authError: null,
       subscription: null,
       subscriptionActive: false,
+      vless: null,
+      vlessError: null,
       currentPayment: null
     });
   },
@@ -212,12 +227,67 @@ export const useAccountStore = create<AccountState>((set, get) => ({
       set({
         subscriptionActive: response.active,
         subscription: response.subscription,
-        subscriptionLoading: false
+        subscriptionLoading: false,
+        vless: response.active ? get().vless : null
       });
     } catch (error) {
+      if (isAuthError(error)) {
+        writeStoredToken(null);
+        set({
+          token: null,
+          user: null,
+          authReady: true,
+          subscriptionActive: false,
+          subscription: null,
+          subscriptionLoading: false,
+          subscriptionError: null,
+          vless: null,
+          vlessError: null
+        });
+        return;
+      }
+
       set({
         subscriptionLoading: false,
         subscriptionError: normalizeError(error)
+      });
+    }
+  },
+
+  loadVless: async () => {
+    const token = get().token;
+    if (!token || !get().subscriptionActive) {
+      set({ vless: null, vlessError: null, vlessLoading: false });
+      return;
+    }
+
+    set({ vlessLoading: true, vlessError: null });
+    try {
+      const response = await getSubscriptionVlessApi(token);
+      set({
+        vless: response.vless,
+        vlessLoading: false
+      });
+    } catch (error) {
+      if (isAuthError(error)) {
+        writeStoredToken(null);
+        set({
+          token: null,
+          user: null,
+          authReady: true,
+          vless: null,
+          vlessLoading: false,
+          vlessError: null,
+          subscription: null,
+          subscriptionActive: false,
+          subscriptionError: null
+        });
+        return;
+      }
+
+      set({
+        vlessLoading: false,
+        vlessError: normalizeError(error)
       });
     }
   },

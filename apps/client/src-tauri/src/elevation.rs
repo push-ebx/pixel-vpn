@@ -54,7 +54,7 @@ pub fn ensure_admin_or_relaunch() -> Result<bool, String> {
     if code > 32 {
         Ok(false)
     } else {
-        Err("Administrator rights are required to run VPN in TUN mode".to_string())
+        Err("Для запуска VPN в режиме TUN требуются права администратора".to_string())
     }
 }
 

@@ -2,19 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
 :root {
-  --background: #0a0a0f;
-  --card: #121218;
-  --card-hover: #1a1a22;
-  --accent: #6366f1;
-  --accent-hover: #818cf8;
-  --text-primary: #ffffff;
-  --text-secondary: #a1a1aa;
-  --success: #22c55e;
+  --background: #0a0a0a;
+  --card: #141414;
+  --card-hover: #1a1a1a;
+  --accent: #5674d6;
+  --accent-hover: #6a86e4;
+  --text-primary: #f5f5f5;
+  --text-secondary: #8a8a8a;
+  --success: #5674d6;
   --error: #ef4444;
-  --border: #27272a;
+  --border: #2a2a2a;
 }
 
 * {
@@ -24,11 +22,15 @@
 }
 
 html {
+  font-size: 19px;
   scroll-behavior: smooth;
 }
 
 body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: "SF Mono", "JetBrains Mono", "Fira Code", "Consolas", monospace;
+  font-size: 1rem;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
   background-color: var(--background);
   color: var(--text-primary);
   min-height: 100vh;
@@ -47,28 +49,61 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--background);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.25);
 }
 
 @layer utilities {
-  .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-accent to-purple-400;
+  .font-pixel-title {
+    font-family: "SF Mono", "JetBrains Mono", "Fira Code", "Consolas", monospace;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
   }
-  
-  .glass {
-    @apply bg-white/5 backdrop-blur-xl border border-white/10;
+
+  .pixel-card {
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--card);
   }
-  
-  .glow {
-    box-shadow: 0 0 40px rgba(99, 102, 241, 0.3);
+
+  .technical-grid {
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  .terminal-text {
+    font-family: "SF Mono", "JetBrains Mono", "Fira Code", monospace;
+    color: var(--text-secondary);
+  }
+
+  .terminal-text .prompt {
+    color: #4ade80;
+  }
+
+  .terminal-text .command {
+    color: var(--accent);
+  }
+
+  .terminal-text .path {
+    color: #f472b6;
+  }
+
+  .terminal-text .error {
+    color: #f87171;
+  }
+
+  .terminal-text .success {
+    color: var(--accent);
   }
 }

@@ -23,12 +23,21 @@ use xray::AndroidVpnBridge;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     #[cfg(not(target_os = "macos"))]
-    match elevation::ensure_admin_or_relaunch() {
-        Ok(true) => {}
-        Ok(false) => return,
-        Err(error) => {
-            eprintln!("{error}");
-            return;
+    {
+        // In `tauri dev`, relaunching via ShellExecute("runas") drops Tauri dev context,
+        // which leads to white screen and ELIFECYCLE in the original process.
+        // Keep mandatory elevation for release builds; allow explicit opt-in in debug.
+        let should_elevate = !cfg!(debug_assertions) || std::env::var_os("PIXEL_FORCE_ELEVATION").is_some();
+
+        if should_elevate {
+            match elevation::ensure_admin_or_relaunch() {
+                Ok(true) => {}
+                Ok(false) => return,
+                Err(error) => {
+                    eprintln!("{error}");
+                    return;
+                }
+            }
         }
     }
 

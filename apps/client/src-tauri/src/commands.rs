@@ -74,7 +74,7 @@ pub async fn connect_vpn(
         let server = settings
             .active_server()
             .cloned()
-            .ok_or("No server selected")?;
+            .ok_or("Сервер не выбран")?;
         (
             server,
             settings.routing_mode.clone(),
@@ -109,13 +109,13 @@ pub async fn connect_vpn(
     {
         let config_json = {
             let xray = state.xray.lock().map_err(|e| e.to_string())?;
-            xray.take_config().ok_or("No VPN config available")?
+            xray.take_config().ok_or("Конфигурация VPN недоступна")?
         };
         let vpn_plugin = app.state::<crate::vpn_plugin::VpnPluginHandle<tauri::Wry>>();
         vpn_plugin.start_vpn(&config_json)?;
     }
 
-    Ok("Connected".to_string())
+    Ok("Подключено".to_string())
 }
 
 #[tauri::command]
@@ -135,7 +135,7 @@ pub async fn disconnect_vpn(
     #[cfg(not(target_os = "android"))]
     let _ = &app;
 
-    Ok("Disconnected".to_string())
+    Ok("Отключено".to_string())
 }
 
 #[tauri::command]
@@ -173,7 +173,7 @@ pub async fn remove_server(state: State<'_, AppState>, id: String) -> Result<(),
 pub async fn select_server(state: State<'_, AppState>, id: String) -> Result<(), String> {
     let mut settings = state.settings.lock().map_err(|e| e.to_string())?;
     if !settings.servers.iter().any(|s| s.id == id) {
-        return Err("Server not found".to_string());
+        return Err("Сервер не найден".to_string());
     }
     settings.active_server_id = Some(id);
     settings.save()
@@ -194,7 +194,7 @@ pub async fn ping_server(state: State<'_, AppState>, id: String) -> Result<Optio
             .iter()
             .find(|s| s.id == id)
             .cloned()
-            .ok_or_else(|| "Server not found".to_string())?
+            .ok_or_else(|| "Сервер не найден".to_string())?
     };
 
     let ping_id = id.clone();
@@ -261,7 +261,7 @@ fn wait_for_connectivity(timeout: Duration) -> Result<(), String> {
         thread::sleep(Duration::from_millis(250));
     }
 
-    Err("VPN tunnel is up, but internet check did not return HTTP 2xx/3xx in time".to_string())
+    Err("VPN-туннель поднят, но проверка интернета не получила HTTP 2xx/3xx вовремя".to_string())
 }
 
 fn fetch_http_status(host: &str, path: &str) -> Result<u16, String> {
@@ -301,7 +301,7 @@ fn fetch_http_status(host: &str, path: &str) -> Result<u16, String> {
         }
     }
 
-    Err(format!("No HTTP response from {}", host))
+    Err(format!("Нет HTTP-ответа от {}", host))
 }
 
 // ─── Helper commands ────────────────────────────────────────────────
@@ -327,7 +327,6 @@ pub async fn get_helper_status() -> Result<HelperStatus, String> {
     })
 }
 
-#[cfg(target_os = "macos")]
 #[derive(serde::Serialize)]
 pub struct HelperStatus {
     pub installed: bool,
@@ -348,6 +347,9 @@ pub async fn uninstall_helper() -> Result<(), String> {
 
 #[cfg(not(target_os = "macos"))]
 #[tauri::command]
-pub async fn get_helper_status() -> Result<(), String> {
-    Ok(())
+pub async fn get_helper_status() -> Result<HelperStatus, String> {
+    Ok(HelperStatus {
+        installed: true,
+        running: true,
+    })
 }

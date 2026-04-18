@@ -1,64 +1,69 @@
 "use client";
 
 import { Shield, Zap, Globe, Lock, Gauge, Headphones } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 
 const features = [
   {
+    code: "01",
     icon: Zap,
-    title: "Молниеносная скорость",
-    description: "Оптимизированные серверы по всему миру обеспечивают минимальную задержку и максимальную скорость.",
+    title: "Стабильный канал",
+    description: "Оптимизированные узлы снижают задержку и дают предсказуемую скорость в течение сессии",
   },
   {
+    code: "02",
     icon: Shield,
-    title: "Военная защита",
-    description: "Шифрование трафика по стандарту AES-256 гарантирует полную безопасность ваших данных.",
+    title: "Шифрование трафика",
+    description: "Данные проходят через защищенный туннель, что снижает риск перехвата в публичных сетях",
   },
   {
+    code: "03",
     icon: Globe,
-    title: "Глобальная сеть",
-    description: "Серверы в 50+ локациях по всему миру. Обходите географические ограничения без усилий.",
+    title: "Геодоступ",
+    description: "Подключение только через Нидерланды",
   },
   {
+    code: "04",
     icon: Lock,
-    title: "Политика No-Logs",
-    description: "Мы не храним логи активности. Ваша приватность — наш главный приоритет.",
+    title: "Приватный режим",
+    description: "Конфигурация построена на минимизации данных о действиях пользователя в приложении",
   },
   {
+    code: "05",
     icon: Gauge,
-    title: "Без лимитов",
-    description: "Неограниченная пропускная способность. Смотрите, качайте, играйте без ограничений.",
+    title: "Без лимита трафика",
+    description: "Подходит для видео, работы и звонков без искусственных ограничений по объему данных",
   },
   {
+    code: "06",
     icon: Headphones,
-    title: "Поддержка 24/7",
-    description: "Наша команда поддержки всегда готова помочь вам в любое время суток.",
+    title: "Туннелирование трафика",
+    description: "Через VPN-туннель проходят только запросы к заблокированным сайтам",
   },
 ];
 
 export function Features() {
   return (
-    <section className="py-24 bg-background">
+    <section className="py-12 bg-background border-t border-border/60">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-text-primary mb-4">
-            Почему выбирают Pixel VPN?
-          </h2>
-          <p className="text-text-secondary max-w-2xl mx-auto">
-            Мы создали VPN, который сочетает в себе скорость, безопасность и простоту использования.
-          </p>
+        <div className="mb-7">
+          <p className="font-pixel-title text-[13px] tracking-[0.08em] text-text-secondary mb-2">ВОЗМОЖНОСТИ</p>
+          <h2 className="font-pixel-title text-xl md:text-2xl tracking-[0.08em] text-text-primary">Что есть в Pixel VPN</h2>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {features.map((feature, index) => (
-            <Card key={index} hover>
-              <div className="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center mb-4">
-                <feature.icon className="w-6 h-6 text-accent" />
+            <Card key={index} hover className="pixel-card p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-9 h-9 border border-accent/40 bg-accent/10 flex items-center justify-center">
+                  <feature.icon className="w-4 h-4 text-accent" />
+                </div>
+                <span className="text-[10px] font-pixel-title tracking-[0.08em] text-text-secondary">[{feature.code}]</span>
               </div>
               <CardHeader className="mb-0 p-0">
-                <CardTitle>{feature.title}</CardTitle>
+                <CardTitle className="font-pixel-title text-sm tracking-[0.06em]">{feature.title}</CardTitle>
               </CardHeader>
-              <p className="text-text-secondary mt-2">{feature.description}</p>
+              <p className="text-text-secondary mt-2 text-xs leading-relaxed terminal-text">{feature.description}</p>
             </Card>
           ))}
         </div>

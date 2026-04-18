@@ -12,7 +12,7 @@ export default function AuthPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
 
-  const submitLabel = mode === "login" ? "Войти" : "Создать";
+  const submitLabel = mode === "login" ? "Войти" : "Зарегистрироваться";
 
   const canSubmit = useMemo(() => {
     if (!email.trim() || !password) {
@@ -63,7 +63,7 @@ export default function AuthPage() {
           <div className="text-center">
             <h1 className="font-pixel-title text-lg text-text-primary">Pixel VPN</h1>
             <p className="text-xs text-text-secondary mt-1 terminal-text">
-              {mode === "login" ? "auth > login" : "auth > register"}
+              {mode === "login" ? "auth > вход" : "auth > регистрация"}
             </p>
           </div>
         </div>
@@ -73,7 +73,7 @@ export default function AuthPage() {
             type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            placeholder="email"
+            placeholder="эл. почта"
             autoComplete="email"
             className="pixel-input w-full"
           />
@@ -81,7 +81,7 @@ export default function AuthPage() {
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            placeholder="password"
+            placeholder="пароль"
             autoComplete={mode === "login" ? "current-password" : "new-password"}
             className="pixel-input w-full"
           />
@@ -91,7 +91,7 @@ export default function AuthPage() {
               type="password"
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
-              placeholder="confirm"
+              placeholder="повторите пароль"
               autoComplete="new-password"
               className="pixel-input w-full"
             />
@@ -117,7 +117,7 @@ export default function AuthPage() {
           onClick={toggleMode}
           className="mt-4 text-xs text-text-secondary hover:text-text-primary transition-colors w-full text-center terminal-text"
         >
-          {mode === "login" ? "no account? create" : "has account? login"}
+          {mode === "login" ? "Нет аккаунта? Создать" : "Уже есть аккаунт? Войти"}
         </button>
       </div>
     </div>
