@@ -102,6 +102,37 @@ export async function markPaymentIntentPaid(intentId: string, userId?: string) {
     }
 
     if (intent.status === PaymentStatus.PAID) {
+      const paidUser = await tx.user.findUnique({
+        where: { id: intent.userId },
+        select: {
+          vpnUuid: true,
+          xuiEmail: true,
+          xuiInboundId: true
+        }
+      });
+
+      if (config.XUI_ENABLED) {
+        if (!paidUser?.vpnUuid || !paidUser.xuiEmail || paidUser.xuiInboundId == null) {
+          return {
+            paymentIntent: intent,
+            xuiAction: "create" as const,
+            xuiPayload: {
+              userId: intent.userId,
+              durationDays: intent.plan.durationDays
+            }
+          };
+        }
+      } else if (!paidUser?.vpnUuid) {
+        return {
+          paymentIntent: intent,
+          xuiAction: "create" as const,
+          xuiPayload: {
+            userId: intent.userId,
+            durationDays: intent.plan.durationDays
+          }
+        };
+      }
+
       return {
         paymentIntent: intent,
         xuiAction: "none" as const
@@ -173,18 +204,18 @@ export async function markPaymentIntentPaid(intentId: string, userId?: string) {
       });
     }
 
-    if (!user?.vpnUuid) {
-      return {
-        paymentIntent: updatedIntent,
-        xuiAction: "create" as const,
-        xuiPayload: {
-          userId: intent.userId,
-          durationDays: intent.plan.durationDays
-        }
-      };
-    }
+    if (config.XUI_ENABLED) {
+      if (!user?.vpnUuid || !user.xuiEmail || user.xuiInboundId == null) {
+        return {
+          paymentIntent: updatedIntent,
+          xuiAction: "create" as const,
+          xuiPayload: {
+            userId: intent.userId,
+            durationDays: intent.plan.durationDays
+          }
+        };
+      }
 
-    if (user.xuiEmail && user.xuiInboundId != null) {
       return {
         paymentIntent: updatedIntent,
         xuiAction: "extend" as const,
@@ -192,6 +223,15 @@ export async function markPaymentIntentPaid(intentId: string, userId?: string) {
           userId: intent.userId,
           email: user.xuiEmail,
           inboundId: user.xuiInboundId,
+          durationDays: intent.plan.durationDays
+        }
+      };
+    } else if (!user?.vpnUuid) {
+      return {
+        paymentIntent: updatedIntent,
+        xuiAction: "create" as const,
+        xuiPayload: {
+          userId: intent.userId,
           durationDays: intent.plan.durationDays
         }
       };
@@ -227,6 +267,10 @@ export async function syncPaymentIntentStatus(intentId: string) {
 
   if (!intent) {
     throw new Error("Счет не найден");
+  }
+
+  if (intent.status === PaymentStatus.PAID) {
+    return markPaymentIntentPaid(intent.id);
   }
 
   if (intent.status !== PaymentStatus.PENDING) {

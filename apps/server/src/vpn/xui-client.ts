@@ -307,16 +307,20 @@ export class XUIApiClient {
   }
 
   async login(): Promise<void> {
-    const body = new FormData();
-    body.set("username", this.username);
-    body.set("password", this.password);
+    const payload: Record<string, string> = {
+      username: this.username,
+      password: this.password
+    };
     if (this.twoFactorCode) {
-      body.set("twoFactorCode", this.twoFactorCode);
+      payload.twoFactorCode = this.twoFactorCode;
     }
 
     const data = await this.request<XuiLoginResponse>("/login/", {
       method: "POST",
-      body
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
     });
 
     if (data.success === false) {

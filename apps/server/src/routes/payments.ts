@@ -161,7 +161,7 @@ paymentsRouter.get("/intents/:intentId", requireAuth, asyncHandler(async (req, r
     return res.status(404).json({ error: "Счет не найден" });
   }
 
-  if (intent.status === PaymentStatus.PENDING) {
+  if (intent.status === PaymentStatus.PENDING || intent.status === PaymentStatus.PAID) {
     try {
       intent = await syncPaymentIntentStatus(intent.id);
     } catch {
