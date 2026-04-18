@@ -31,7 +31,7 @@ interface VlessData {
 
 export default function DashboardClient() {
   const router = useRouter();
-  const { user, checkAuth, isInitialized } = useAuthStore();
+  const { user, checkAuth, isInitialized, logout } = useAuthStore();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [vless, setVless] = useState<VlessData | null>(null);
   const [remainingMs, setRemainingMs] = useState<number | null>(null);
@@ -90,7 +90,7 @@ export default function DashboardClient() {
   }, [subscription?.subscription?.endsAt]);
 
   const handleLogout = async () => {
-    await api.logout();
+    await logout();
     router.replace("/");
   };
 

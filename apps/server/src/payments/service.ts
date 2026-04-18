@@ -1,4 +1,4 @@
-import { PaymentStatus, SubscriptionStatus } from "@prisma/client";
+import { PaymentStatus, Prisma, SubscriptionStatus } from "@prisma/client";
 
 import { prisma } from "../lib/prisma";
 import { getYooKassaPayment } from "./yookassa";
@@ -10,6 +10,66 @@ function addDays(base: Date, days: number) {
   const date = new Date(base);
   date.setUTCDate(date.getUTCDate() + days);
   return date;
+}
+
+async function consumePromoCodeIfNeeded(
+  tx: Prisma.TransactionClient,
+  promoCodeId: string | null,
+  userId: string,
+  now: Date
+) {
+  if (!promoCodeId) {
+    return;
+  }
+
+  const promoCode = await tx.promoCode.findUnique({
+    where: { id: promoCodeId }
+  });
+
+  if (!promoCode) {
+    return;
+  }
+
+  if (!promoCode.isActive) {
+    throw new Error("Промокод деактивирован");
+  }
+
+  if (promoCode.expiresAt && promoCode.expiresAt <= now) {
+    throw new Error("Срок действия промокода истек");
+  }
+
+  if (promoCode.maxUses !== null && promoCode.usedCount >= promoCode.maxUses) {
+    throw new Error("Лимит использований исчерпан");
+  }
+
+  if (promoCode.type === "ONETIME") {
+    const existingUsage = await tx.promoCodeUsage.findUnique({
+      where: {
+        promoCodeId_userId: {
+          promoCodeId,
+          userId
+        }
+      }
+    });
+
+    if (existingUsage) {
+      throw new Error("Вы уже использовали этот промокод");
+    }
+
+    await tx.promoCodeUsage.create({
+      data: {
+        promoCodeId,
+        userId
+      }
+    });
+  }
+
+  await tx.promoCode.update({
+    where: { id: promoCodeId },
+    data: {
+      usedCount: { increment: 1 }
+    }
+  });
 }
 
 async function createXuiUserIfNeeded(
@@ -161,6 +221,8 @@ export async function markPaymentIntentPaid(intentId: string, userId?: string) {
     if (intent.expiresAt <= now) {
       throw new Error("Срок действия счета истек");
     }
+
+    await consumePromoCodeIfNeeded(tx, intent.promoCodeId ?? null, intent.userId, now);
 
     const updatedIntent = await tx.paymentIntent.update({
       where: { id: intent.id },

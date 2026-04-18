@@ -53,6 +53,7 @@ paymentsRouter.post("/intents", requireAuth, asyncHandler(async (req, res) => {
   }
 
   let amountRub = plan.priceRub;
+  let appliedPromoCodeId: string | null = null;
 
   if (promoCodeInput) {
     const code = promoCodeInput.toUpperCase();
@@ -102,6 +103,7 @@ paymentsRouter.post("/intents", requireAuth, asyncHandler(async (req, res) => {
       return res.status(400).json({ error: "Промокод не действует для выбранного тарифа" });
     }
 
+    appliedPromoCodeId = promoCode.id;
     amountRub = Math.max(0, Math.round(plan.priceRub * (1 - promoCode.discountPercent / 100)));
   }
 
@@ -112,6 +114,7 @@ paymentsRouter.post("/intents", requireAuth, asyncHandler(async (req, res) => {
       data: {
         userId: auth.id,
         planId: plan.id,
+        promoCodeId: appliedPromoCodeId,
         amountRub: 0,
         provider: promoCodeInput ? "promocode" : "free",
         status: PaymentStatus.PENDING,
@@ -151,6 +154,7 @@ paymentsRouter.post("/intents", requireAuth, asyncHandler(async (req, res) => {
     data: {
       userId: auth.id,
       planId: plan.id,
+      promoCodeId: appliedPromoCodeId,
       amountRub,
       provider: "yookassa",
       status: PaymentStatus.PENDING,

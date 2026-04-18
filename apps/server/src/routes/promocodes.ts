@@ -179,20 +179,6 @@ promoCodesRouter.post("/apply", asyncHandler(async (req, res) => {
   const finalPrice = Math.round(plan.priceRub * (1 - promoCode.discountPercent / 100));
 
   if (promoCode.discountPercent >= 100) {
-    await prisma.$transaction(async (tx) => {
-      await tx.promoCodeUsage.create({
-        data: {
-          promoCodeId: promoCode.id,
-          userId: auth.id
-        }
-      });
-
-      await tx.promoCode.update({
-        where: { id: promoCode.id },
-        data: { usedCount: { increment: 1 } }
-      });
-    });
-
     const { markPaymentIntentPaid } = await import("../payments/service");
     const freePlan = await prisma.plan.findFirst({
       where: { code: "TRIAL", isActive: true }
@@ -208,11 +194,11 @@ promoCodesRouter.post("/apply", asyncHandler(async (req, res) => {
       data: {
         userId: auth.id,
         planId: freePlan.id,
+        promoCodeId: promoCode.id,
         amountRub: 0,
         provider: "promocode",
-        status: "PAID",
-        expiresAt,
-        paidAt: now
+        status: "PENDING",
+        expiresAt
       }
     });
 

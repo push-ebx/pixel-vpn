@@ -59,6 +59,7 @@ model PaymentIntent {
   id           String        @id @default(cuid())
   userId       String
   planId       String
+  promoCodeId  String?
   amountRub    Int
   provider     String        @default("yookassa") @db.VarChar(32)
   status       PaymentStatus @default(PENDING)
@@ -72,9 +73,11 @@ model PaymentIntent {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   plan Plan @relation(fields: [planId], references: [id], onDelete: Restrict)
+  promoCode PromoCode? @relation(fields: [promoCodeId], references: [id], onDelete: SetNull)
 
   @@index([userId, status])
   @@index([planId])
+  @@index([promoCodeId])
   @@index([createdAt])
 }
 
@@ -115,6 +118,7 @@ model PromoCode {
 
   plan      Plan             @relation(fields: [planId], references: [id], onDelete: Restrict)
   planLinks PromoCodePlan[]
+  paymentIntents PaymentIntent[]
   usages    PromoCodeUsage[] @relation("PromoCodeUsages")
 
   @@index([code])
