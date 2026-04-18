@@ -6,6 +6,7 @@ import { config } from "../config";
 export type AuthTokenPayload = {
   sub: string;
   email: string;
+  isAdmin?: boolean;
 };
 
 export function signAccessToken(payload: AuthTokenPayload) {

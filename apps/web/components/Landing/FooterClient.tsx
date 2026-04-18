@@ -25,15 +25,15 @@ export function FooterClient() {
           </div>
 
           <nav className="flex items-center gap-4 text-[13px] font-pixel-title tracking-[0.06em] text-text-secondary">
-            <Link href="/pricing" className="hover:text-accent transition-colors">
+            <Link href="/pricing" className="hover:text-accent transition-colors text-base">
               тарифы
             </Link>
             {user ? (
-              <Link href="/dashboard" className="hover:text-accent transition-colors">
+              <Link href="/dashboard" className="hover:text-accent transition-colors text-base">
                 аккаунт
               </Link>
             ) : (
-              <Link href="/login" className="hover:text-accent transition-colors">
+              <Link href="/login" className="hover:text-accent transition-colors text-base">
                 вход
               </Link>
             )}

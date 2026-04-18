@@ -1,10 +1,12 @@
 import type { NextFunction, Request, Response } from "express";
 
+import { prisma } from "../lib/prisma";
 import { verifyAccessToken } from "./jwt";
 
 export type AuthUser = {
   id: string;
   email: string;
+  isAdmin: boolean;
 };
 
 export type RequestWithAuth = Request & {
@@ -25,9 +27,19 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
 
   try {
     const payload = verifyAccessToken(token);
+    const user = await prisma.user.findUnique({
+      where: { id: payload.sub },
+      select: { id: true, email: true, isAdmin: true }
+    });
+
+    if (!user) {
+      return res.status(401).json({ error: "Пользователь не найден" });
+    }
+
     (req as RequestWithAuth).auth = {
-      id: payload.sub,
-      email: payload.email
+      id: user.id,
+      email: user.email,
+      isAdmin: user.isAdmin
     };
     return next();
   } catch {
@@ -43,4 +55,14 @@ export function getAuthUser(req: Request): AuthUser {
   }
 
   return user;
+}
+
+export function requireAdmin(req: Request, res: Response, next: NextFunction) {
+  const auth = (req as RequestWithAuth).auth;
+
+  if (!auth || !auth.isAdmin) {
+    return res.status(403).json({ error: "Доступ запрещен" });
+  }
+
+  return next();
 }

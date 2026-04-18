@@ -138,7 +138,7 @@ export default function DashboardClient() {
 
           <div className="flex items-center gap-4">
             <span className="text-sm text-text-secondary">{user?.email}</span>
-            <Button variant="ghost" size="sm" onClick={handleLogout}>
+            <Button variant="ghost" onClick={handleLogout}>
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
@@ -229,29 +229,29 @@ export default function DashboardClient() {
               </Card>
             </>
           ) : (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="w-5 h-5 text-error" />
-                  Нет активной подписки
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-text-secondary">
-                  Приобретите подписку для получения VLESS конфигурации и доступа к VPN серверам.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <Link href="/pricing" className="flex-1">
-                    <Button className="w-full">
-                      <Download className="w-4 h-4 mr-2" />
-                      Выбрать тариф
-                    </Button>
-                  </Link>
-                  <Link href="/" className="flex-1">
-                    <Button variant="secondary" className="w-full">
-                      На главную
-                    </Button>
-                  </Link>
+<Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Shield className="w-5 h-5 text-error" />
+                    Нет активной подписки
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-text-secondary">
+                    Приобретите подписку для получения VLESS конфигурации и доступа к VPN серверам.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <Link href="/pricing" className="flex-1">
+                      <Button className="w-full">
+                        <Download className="w-4 h-4 mr-2" />
+                        Выбрать тариф
+                      </Button>
+                    </Link>
+                    <Link href="/install/android" className="flex-1">
+                      <Button variant="secondary" className="w-full">
+                        Инструкция
+                      </Button>
+                    </Link>
                 </div>
               </CardContent>
             </Card>

@@ -38,7 +38,8 @@ authRouter.post("/register", asyncHandler(async (req, res) => {
 
   const accessToken = signAccessToken({
     sub: user.id,
-    email: user.email
+    email: user.email,
+    isAdmin: user.isAdmin
   });
 
   res.cookie("pixel-vpn-web-auth-token", accessToken, {
@@ -76,7 +77,8 @@ authRouter.post("/login", asyncHandler(async (req, res) => {
 
   const accessToken = signAccessToken({
     sub: user.id,
-    email: user.email
+    email: user.email,
+    isAdmin: user.isAdmin
   });
 
   res.cookie("pixel-vpn-web-auth-token", accessToken, {

@@ -9,37 +9,43 @@ const clients = [
   {
     icon: Monitor,
     title: "Windows",
-    description: "Удобное приложение для Windows 10 и 11",
+    description: "Подключение через Hiddify",
+    href: "/install/windows",
     status: "available",
   },
   {
     icon: Monitor,
     title: "macOS",
-    description: "Нативное приложение для Mac с чипом Apple Silicon",
+    description: "Подключение через Hiddify",
+    href: "/install/macos",
     status: "available",
   },
   {
     icon: Smartphone,
     title: "iOS",
-    description: "Защитите свой iPhone и iPad",
-    status: "available",
+    description: "Подключение через Shadowrocket/Stash",
+    href: "/install/ios",
+    status: "coming-soon",
   },
   {
     icon: Smartphone,
     title: "Android",
-    description: "Приложение для Android устройств",
+    description: "Подключение через Hiddify",
+    href: "/install/android",
     status: "available",
   },
   {
     icon: Tablet,
     title: "Android TV",
-    description: "Смотрите контент на большом экране",
-    status: "available",
+    description: "Подключение через V2Box",
+    href: "/install/android-tv",
+    status: "coming-soon",
   },
   {
     icon: Globe,
     title: "Роутеры",
-    description: "Настройте VPN на роутере для всех устройств",
+    description: "Настройка на роутере для всех устройств",
+    href: "/install/routers",
     status: "coming-soon",
   },
 ];
@@ -74,15 +80,15 @@ export function Clients() {
                 <p className="text-xs text-text-secondary terminal-text mt-1">{client.description}</p>
               </div>
 
-              <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
+<div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
                 {client.status === "available" ? (
-                  <Link href="/dashboard">
+                  <Link href={client.href || "/install"}>
                     <Button
                       size="sm"
                       variant="ghost"
                       className="font-pixel-title text-[12.5px] tracking-[0.08em] text-accent uppercase"
                     >
-                      скачать
+                      настроить
                     </Button>
                   </Link>
                 ) : (

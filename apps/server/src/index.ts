@@ -6,6 +6,7 @@ import morgan from "morgan";
 
 import { config, getAllowedOrigins } from "./config";
 import { prisma } from "./lib/prisma";
+import { adminRouter } from "./routes/admin";
 import { authRouter } from "./routes/auth";
 import { healthRouter } from "./routes/health";
 import { paymentsRouter } from "./routes/payments";
@@ -60,6 +61,7 @@ app.use("/api/plans", plansRouter);
 app.use("/api/payments", paymentsRouter);
 app.use("/api/promocodes", promoCodesRouter);
 app.use("/api/subscription", subscriptionRouter);
+app.use("/api/admin", adminRouter);
 
 app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   // eslint-disable-next-line no-console
