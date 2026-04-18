@@ -2,6 +2,14 @@ import "dotenv/config";
 
 import { z } from "zod";
 
+const normalizedEnv = {
+  ...process.env,
+  XUI_SCHEME: process.env.XUI_SCHEME ?? process.env.XUI_PROTOCOL,
+  HOST_X_UI: process.env.HOST_X_UI ?? process.env.XUI_HOST,
+  PORT_X_UI: process.env.PORT_X_UI ?? process.env.XUI_PORT,
+  WEBBASEPATH: process.env.WEBBASEPATH ?? process.env.XUI_WEBBASEPATH ?? process.env.XUI_WEB_BASE_PATH
+};
+
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   PORT: z.coerce.number().int().positive().default(8787),
@@ -19,6 +27,7 @@ const envSchema = z.object({
 
   // x-ui API settings for managing VLESS users
   XUI_ENABLED: z.coerce.boolean().default(false),
+  XUI_BASE_URL: z.string().url().optional(),
   XUI_SCHEME: z.enum(["http", "https"]).default("http"),
   HOST_X_UI: z.string().default("127.0.0.1"),
   PORT_X_UI: z.coerce.number().int().positive().default(2053),
@@ -27,6 +36,7 @@ const envSchema = z.object({
   XUI_PASSWORD: z.string().default("admin"),
   XUI_TWO_FACTOR_CODE: z.string().optional(),
   XUI_FLOW: z.string().default("xtls-rprx-vision"),
+  XUI_REQUEST_TIMEOUT_MS: z.coerce.number().int().positive().default(12000),
 
   // VPN (Xray Reality) server parameters used to build VLESS links for users.
   XRAY_HOST: z.string().min(1).default("127.0.0.1"),
@@ -39,7 +49,7 @@ const envSchema = z.object({
   XRAY_FINGERPRINT: z.string().default("chrome")
 });
 
-const parsed = envSchema.safeParse(process.env);
+const parsed = envSchema.safeParse(normalizedEnv);
 
 if (!parsed.success) {
   // eslint-disable-next-line no-console

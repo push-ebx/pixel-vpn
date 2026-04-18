@@ -13,6 +13,7 @@ Server API will be available at `http://localhost:8787`.
 For 3x-ui auto provisioning after payment, configure:
 `XUI_ENABLED`, `HOST_X_UI`, `PORT_X_UI`, `WEBBASEPATH`, `XUI_USERNAME`, `XUI_PASSWORD`,
 and Reality link params (`XRAY_HOST`, `XRAY_PORT`, `XRAY_PUBLIC_KEY`, `XRAY_SNI`, `XRAY_SHORT_ID`).
+You can also set `XUI_BASE_URL` (for example `https://host:port/webbasepath`) to override host/port/path in one variable.
 
 Stop all containers:
 

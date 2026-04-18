@@ -181,6 +181,10 @@ function resolveBaseUrl(override?: string): string {
     return override.replace(/\/+$/, "");
   }
 
+  if (config.XUI_BASE_URL) {
+    return config.XUI_BASE_URL.replace(/\/+$/, "");
+  }
+
   const webBasePath = normalizeWebBasePath(config.WEBBASEPATH);
   return `${config.XUI_SCHEME}://${config.HOST_X_UI}:${config.PORT_X_UI}${webBasePath}`.replace(/\/+$/, "");
 }
@@ -229,6 +233,27 @@ function normalizeCookieHeader(setCookieHeaders: string[]): string | null {
   return cookiePairs.join("; ");
 }
 
+function formatFetchFailure(baseUrl: string, path: string, error: unknown): string {
+  const fullUrl = `${baseUrl}${path}`;
+  if (!(error instanceof Error)) {
+    return `Failed to reach x-ui at ${fullUrl}`;
+  }
+
+  const cause = error.cause as
+    | { code?: string; address?: string; port?: number; message?: string }
+    | undefined;
+
+  if (cause?.code && cause?.address && cause?.port) {
+    return `Failed to reach x-ui at ${fullUrl}: ${cause.code} ${cause.address}:${cause.port}`;
+  }
+
+  if (cause?.message) {
+    return `Failed to reach x-ui at ${fullUrl}: ${cause.message}`;
+  }
+
+  return `Failed to reach x-ui at ${fullUrl}: ${error.message}`;
+}
+
 export class XUIApiClient {
   private baseUrl: string;
   private username: string;
@@ -242,6 +267,10 @@ export class XUIApiClient {
     this.username = options?.username || config.XUI_USERNAME;
     this.password = options?.password || config.XUI_PASSWORD;
     this.twoFactorCode = options?.twoFactorCode || config.XUI_TWO_FACTOR_CODE;
+  }
+
+  getBaseUrl(): string {
+    return this.baseUrl;
   }
 
   private async request<T>(
@@ -260,10 +289,16 @@ export class XUIApiClient {
       headers.set("Authorization", `Bearer ${this.token}`);
     }
 
-    const response = await fetch(`${this.baseUrl}${path}`, {
-      ...options,
-      headers
-    });
+    let response: Response;
+    try {
+      response = await fetch(`${this.baseUrl}${path}`, {
+        ...options,
+        headers,
+        signal: AbortSignal.timeout(config.XUI_REQUEST_TIMEOUT_MS)
+      });
+    } catch (error) {
+      throw new XuiClientError(formatFetchFailure(this.baseUrl, path, error));
+    }
 
     const setCookieHeaders = extractSetCookieHeaders(response.headers);
     const normalizedCookie = normalizeCookieHeader(setCookieHeaders);

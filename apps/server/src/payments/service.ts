@@ -4,7 +4,7 @@ import { prisma } from "../lib/prisma";
 import { getYooKassaPayment } from "./yookassa";
 import { generateUserVlessUuid } from "../vpn/vless";
 import { config } from "../config";
-import { getXuiClient } from "../vpn/xui-client";
+import { getXuiClient, XuiClientError } from "../vpn/xui-client";
 
 function addDays(base: Date, days: number) {
   const date = new Date(base);
@@ -29,48 +29,54 @@ async function createXuiUserIfNeeded(
   }
 
   const xui = getXuiClient();
+  try {
+    const inbound = await xui.getFirstInbound();
+    if (!inbound) {
+      throw new Error("No inbound found in x-ui");
+    }
 
-  const inbound = await xui.getFirstInbound();
-  if (!inbound) {
-    throw new Error("No inbound found in x-ui");
-  }
+    const xuiEmail = `pixel_${userId}`;
+    const existingClient = await xui.findClientByEmail(xuiEmail);
 
-  const xuiEmail = `pixel_${userId}`;
-  const existingClient = await xui.findClientByEmail(xuiEmail);
+    if (existingClient) {
+      const uuid = existingClient.client.id;
 
-  if (existingClient) {
-    const uuid = existingClient.client.id;
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          vpnUuid: uuid,
+          xuiEmail,
+          xuiInboundId: existingClient.inbound.id,
+          vpnUpdatedAt: new Date()
+        }
+      });
+
+      return { uuid };
+    }
+
+    const { uuid } = await xui.createClient(
+      inbound.id,
+      xuiEmail,
+      expiryDays
+    );
 
     await prisma.user.update({
       where: { id: userId },
       data: {
         vpnUuid: uuid,
         xuiEmail,
-        xuiInboundId: existingClient.inbound.id,
+        xuiInboundId: inbound.id,
         vpnUpdatedAt: new Date()
       }
     });
 
     return { uuid };
-  }
-
-  const { uuid } = await xui.createClient(
-    inbound.id,
-    xuiEmail,
-    expiryDays
-  );
-
-  await prisma.user.update({
-    where: { id: userId },
-    data: {
-      vpnUuid: uuid,
-      xuiEmail,
-      xuiInboundId: inbound.id,
-      vpnUpdatedAt: new Date()
+  } catch (error) {
+    if (error instanceof XuiClientError) {
+      throw new Error(`x-ui provisioning failed (${xui.getBaseUrl()}): ${error.message}`);
     }
-  });
-
-  return { uuid };
+    throw error;
+  }
 }
 
 async function extendXuiUserSubscription(
@@ -83,7 +89,14 @@ async function extendXuiUserSubscription(
   }
 
   const xui = getXuiClient();
-  await xui.addDaysToClient(inboundId, email, additionalDays);
+  try {
+    await xui.addDaysToClient(inboundId, email, additionalDays);
+  } catch (error) {
+    if (error instanceof XuiClientError) {
+      throw new Error(`x-ui subscription update failed (${xui.getBaseUrl()}): ${error.message}`);
+    }
+    throw error;
+  }
 }
 
 export async function markPaymentIntentPaid(intentId: string, userId?: string) {
@@ -241,6 +254,9 @@ export async function markPaymentIntentPaid(intentId: string, userId?: string) {
       paymentIntent: updatedIntent,
       xuiAction: "none" as const
     };
+  }, {
+    timeout: 20_000,
+    maxWait: 10_000
   });
 
   if (txResult.xuiAction === "create") {

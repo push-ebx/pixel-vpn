@@ -20,4 +20,4 @@ RUN pnpm --filter @pixel-vpn/server build
 
 EXPOSE 8787
 
-CMD ["sh", "-c", "pnpm --filter @pixel-vpn/server prisma:push && pnpm --filter @pixel-vpn/server start"]
+CMD ["sh", "-c", "pnpm --filter @pixel-vpn/server exec prisma db push --accept-data-loss && pnpm --filter @pixel-vpn/server start"]
