@@ -10,6 +10,9 @@ Server API will be available at `http://localhost:8787`.
 
 `server` container reads extra app variables from `apps/server/.env`
 (for example `YOOKASSA_SHOP_ID` and `YOOKASSA_SECRET_KEY`).
+For 3x-ui auto provisioning after payment, configure:
+`XUI_ENABLED`, `HOST_X_UI`, `PORT_X_UI`, `WEBBASEPATH`, `XUI_USERNAME`, `XUI_PASSWORD`,
+and Reality link params (`XRAY_HOST`, `XRAY_PORT`, `XRAY_PUBLIC_KEY`, `XRAY_SNI`, `XRAY_SHORT_ID`).
 
 Stop all containers:
 

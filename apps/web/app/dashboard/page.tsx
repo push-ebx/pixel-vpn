@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { useAuthStore } from "@/lib/auth";
 import * as api from "@/lib/api";
-import { Shield, LogOut, RefreshCw, ExternalLink, Download } from "lucide-react";
+import { Shield, LogOut, ExternalLink, Download } from "lucide-react";
 
 interface Subscription {
   active: boolean;
@@ -26,7 +26,6 @@ interface Subscription {
 }
 
 interface VlessData {
-  uuid: string;
   link: string;
 }
 
@@ -35,7 +34,6 @@ export default function DashboardPage() {
   const router = useRouter();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [vless, setVless] = useState<VlessData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [remainingMs, setRemainingMs] = useState<number | null>(null);
 
   useEffect(() => {
@@ -53,10 +51,9 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchData = async () => {
       if (!user) return;
-      
-      setIsLoading(true);
+
       const subRes = await api.getSubscription();
-      
+
       if (subRes.data) {
         setSubscription(subRes.data);
       }
@@ -71,7 +68,6 @@ export default function DashboardPage() {
       } else {
         setVless(null);
       }
-      setIsLoading(false);
     };
 
     if (user) {
@@ -117,16 +113,6 @@ export default function DashboardPage() {
     router.replace("/");
   };
 
-  const handleRefresh = async () => {
-    if (!user) return;
-    setIsLoading(true);
-    const vlessRes = await api.getVless();
-    if (vlessRes.data?.vless) {
-      setVless(vlessRes.data.vless);
-    }
-    setIsLoading(false);
-  };
-
   if (!isInitialized || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -145,7 +131,7 @@ export default function DashboardPage() {
             </div>
             <span className="text-lg font-bold text-text-primary">Pixel VPN</span>
           </Link>
-          
+
           <div className="flex items-center gap-4">
             <span className="text-sm text-text-secondary">{user.email}</span>
             <Button variant="ghost" size="sm" onClick={handleLogout}>
@@ -199,11 +185,8 @@ export default function DashboardPage() {
 
               {vless && (
                 <Card>
-                  <CardHeader className="flex flex-row items-center justify-between">
+                  <CardHeader>
                     <CardTitle>VLESS конфигурация</CardTitle>
-                    <Button variant="ghost" size="sm" onClick={handleRefresh} disabled={isLoading}>
-                      <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
-                    </Button>
                   </CardHeader>
                   <CardContent>
                     <div className="flex flex-col items-center gap-6">
@@ -215,18 +198,8 @@ export default function DashboardPage() {
                           includeMargin
                         />
                       </div>
-                      
+
                       <div className="w-full space-y-3">
-                        <div>
-                          <label className="text-sm text-text-secondary mb-1 block">UUID</label>
-                          <div className="flex items-center gap-2">
-                            <code className="flex-1 px-3 py-2 bg-card rounded border border-border text-sm text-text-primary font-mono">
-                              {vless.uuid}
-                            </code>
-                            <CopyButton text={vless.uuid} />
-                          </div>
-                        </div>
-                        
                         <div>
                           <label className="text-sm text-text-secondary mb-1 block">VLESS ключ</label>
                           <div className="flex items-center gap-2">
@@ -239,7 +212,7 @@ export default function DashboardPage() {
                       </div>
 
                       <p className="text-xs text-text-secondary text-center">
-                        Отсканируйте QR-код в приложении Pixel VPN или скопируйте ссылку и добавьте вручную.
+                        Отсканируйте QR-код в приложении или скопируйте ссылку и добавьте вручную.
                       </p>
                     </div>
                   </CardContent>

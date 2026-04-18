@@ -2,7 +2,7 @@ import { PaymentStatus, SubscriptionStatus } from "@prisma/client";
 
 import { prisma } from "../lib/prisma";
 import { getYooKassaPayment } from "./yookassa";
-import { generateUserVlessUuid, buildVlessLink } from "../vpn/vless";
+import { generateUserVlessUuid } from "../vpn/vless";
 import { config } from "../config";
 import { getXuiClient } from "../vpn/xui-client";
 
@@ -14,7 +14,6 @@ function addDays(base: Date, days: number) {
 
 async function createXuiUserIfNeeded(
   userId: string,
-  email: string,
   expiryDays?: number
 ): Promise<{ uuid: string }> {
   if (!config.XUI_ENABLED) {
@@ -29,55 +28,52 @@ async function createXuiUserIfNeeded(
     return { uuid };
   }
 
-  try {
-    const xui = getXuiClient();
+  const xui = getXuiClient();
 
-    const inbound = await xui.getInboundByTag(config.XUI_INBOUND_TAG);
-    if (!inbound) {
-      throw new Error(`Inbound with tag "${config.XUI_INBOUND_TAG}" not found`);
-    }
+  const inbound = await xui.getFirstInbound();
+  if (!inbound) {
+    throw new Error("No inbound found in x-ui");
+  }
 
-    const xuiEmail = `pixel_${userId}`;
+  const xuiEmail = `pixel_${userId}`;
+  const existingClient = await xui.findClientByEmail(xuiEmail);
 
-    const existingClient = await xui.getClientByEmail(xuiEmail);
-    if (existingClient) {
-      await xui.addDaysToClient(inbound.id, xuiEmail, expiryDays || 30);
-      return { uuid: String(existingClient.id) };
-    }
-
-    const { uuid, vlessLink } = await xui.createClient(
-      inbound.id,
-      xuiEmail,
-      expiryDays
-    );
+  if (existingClient) {
+    const uuid = existingClient.client.id;
 
     await prisma.user.update({
       where: { id: userId },
       data: {
         vpnUuid: uuid,
         xuiEmail,
-        xuiInboundId: inbound.id,
+        xuiInboundId: existingClient.inbound.id,
         vpnUpdatedAt: new Date()
       }
     });
 
     return { uuid };
-  } catch (error) {
-    console.error("Failed to create x-ui user:", error);
-    const uuid = generateUserVlessUuid();
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
-        vpnUuid: uuid,
-        vpnUpdatedAt: new Date()
-      }
-    });
-    return { uuid };
   }
+
+  const { uuid } = await xui.createClient(
+    inbound.id,
+    xuiEmail,
+    expiryDays
+  );
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      vpnUuid: uuid,
+      xuiEmail,
+      xuiInboundId: inbound.id,
+      vpnUpdatedAt: new Date()
+    }
+  });
+
+  return { uuid };
 }
 
 async function extendXuiUserSubscription(
-  userId: string,
   email: string,
   inboundId: number,
   additionalDays: number
@@ -86,12 +82,8 @@ async function extendXuiUserSubscription(
     return;
   }
 
-  try {
-    const xui = getXuiClient();
-    await xui.addDaysToClient(inboundId, email, additionalDays);
-  } catch (error) {
-    console.error("Failed to extend x-ui user subscription:", error);
-  }
+  const xui = getXuiClient();
+  await xui.addDaysToClient(inboundId, email, additionalDays);
 }
 
 export async function markPaymentIntentPaid(intentId: string, userId?: string) {
@@ -214,12 +206,10 @@ export async function markPaymentIntentPaid(intentId: string, userId?: string) {
   if (txResult.xuiAction === "create") {
     await createXuiUserIfNeeded(
       txResult.xuiPayload.userId,
-      txResult.xuiPayload.userId,
       txResult.xuiPayload.durationDays
     );
   } else if (txResult.xuiAction === "extend") {
     await extendXuiUserSubscription(
-      txResult.xuiPayload.userId,
       txResult.xuiPayload.email,
       txResult.xuiPayload.inboundId,
       txResult.xuiPayload.durationDays

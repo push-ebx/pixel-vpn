@@ -90,7 +90,6 @@ interface Subscription {
 }
 
 interface VlessResponse {
-  uuid: string;
   link: string;
 }
 

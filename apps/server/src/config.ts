@@ -19,12 +19,14 @@ const envSchema = z.object({
 
   // x-ui API settings for managing VLESS users
   XUI_ENABLED: z.coerce.boolean().default(false),
-  XUI_BASE_URL: z.string().default("http://localhost:2053"),
+  XUI_SCHEME: z.enum(["http", "https"]).default("http"),
+  HOST_X_UI: z.string().default("127.0.0.1"),
+  PORT_X_UI: z.coerce.number().int().positive().default(2053),
+  WEBBASEPATH: z.string().default(""),
   XUI_USERNAME: z.string().default("admin"),
   XUI_PASSWORD: z.string().default("admin"),
-  XUI_INBOUND_TAG: z.string().default("vless-reality"),
+  XUI_TWO_FACTOR_CODE: z.string().optional(),
   XUI_FLOW: z.string().default("xtls-rprx-vision"),
-  XUI_PORT: z.coerce.number().int().positive().default(443),
 
   // VPN (Xray Reality) server parameters used to build VLESS links for users.
   XRAY_HOST: z.string().min(1).default("127.0.0.1"),
@@ -32,6 +34,7 @@ const envSchema = z.object({
   XRAY_PUBLIC_KEY: z.string().min(1).default("CHANGE-ME-PUBLIC-KEY"),
   XRAY_SNI: z.string().min(1).default("www.google.com"),
   XRAY_SHORT_ID: z.string().default(""),
+  XRAY_SPX: z.string().default("/"),
   XRAY_FLOW: z.string().default("xtls-rprx-vision"),
   XRAY_FINGERPRINT: z.string().default("chrome")
 });

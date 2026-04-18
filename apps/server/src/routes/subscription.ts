@@ -6,6 +6,7 @@ import { asyncHandler } from "../lib/async-handler";
 import { prisma } from "../lib/prisma";
 import { syncPendingPaymentsForUser } from "../payments/service";
 import { buildVlessLink } from "../vpn/vless";
+import { createXuiClient, XuiClientError } from "../vpn/xui-client";
 
 const subscriptionRouter = Router();
 
@@ -104,6 +105,115 @@ subscriptionRouter.get("/vless", requireAuth, asyncHandler(async (req, res) => {
       xuiEnabled: Boolean(user.xuiEmail && user.xuiInboundId)
     }
   });
+}));
+
+subscriptionRouter.post("/vless/xui", requireAuth, asyncHandler(async (req, res) => {
+  const auth = getAuthUser(req);
+  const body = (req.body ?? {}) as Record<string, unknown>;
+
+  const xuiUsername = typeof body.xuiUsername === "string" ? body.xuiUsername.trim() : "";
+  const xuiPassword = typeof body.xuiPassword === "string" ? body.xuiPassword.trim() : "";
+  const xuiBaseUrl = typeof body.xuiBaseUrl === "string" ? body.xuiBaseUrl.trim() : undefined;
+  const inboundTag = typeof body.inboundTag === "string" ? body.inboundTag.trim() : undefined;
+  const label = typeof body.label === "string" && body.label.trim() ? body.label.trim() : "PixelVPN";
+
+  const inboundIdRaw = body.inboundId;
+  const parsedInboundId =
+    typeof inboundIdRaw === "number" && Number.isInteger(inboundIdRaw)
+      ? inboundIdRaw
+      : typeof inboundIdRaw === "string" && /^\d+$/.test(inboundIdRaw.trim())
+        ? Number(inboundIdRaw.trim())
+        : undefined;
+
+  const expiryDaysRaw = body.expiryDays;
+  const parsedExpiryDays =
+    typeof expiryDaysRaw === "number" && Number.isInteger(expiryDaysRaw) && expiryDaysRaw > 0
+      ? expiryDaysRaw
+      : typeof expiryDaysRaw === "string" && /^\d+$/.test(expiryDaysRaw.trim()) && Number(expiryDaysRaw.trim()) > 0
+        ? Number(expiryDaysRaw.trim())
+        : undefined;
+
+  if (!xuiUsername || !xuiPassword) {
+    return res.status(400).json({
+      error: "Укажите xuiUsername и xuiPassword"
+    });
+  }
+
+  if (parsedInboundId == null && !inboundTag) {
+    return res.status(400).json({
+      error: "Укажите inboundId или inboundTag"
+    });
+  }
+
+  const xui = createXuiClient({
+    username: xuiUsername,
+    password: xuiPassword,
+    baseUrl: xuiBaseUrl
+  });
+
+  try {
+    const inbound = parsedInboundId != null
+      ? await xui.getInboundById(parsedInboundId)
+      : await xui.getInboundByTag(inboundTag!);
+
+    if (!inbound) {
+      return res.status(404).json({
+        error: "Inbound не найден в x-ui"
+      });
+    }
+
+    const xuiEmail = `pixel_${auth.id}`;
+    const existingClient = inbound.clients.find((client) => client.email === xuiEmail);
+
+    let uuid: string;
+    let created = false;
+
+    if (existingClient) {
+      uuid = String(existingClient.id);
+      if (parsedExpiryDays) {
+        const currentExpiry = existingClient.expiryTime || Date.now();
+        const existingDays = Math.max(
+          0,
+          Math.ceil((currentExpiry - Date.now()) / (24 * 60 * 60 * 1000))
+        );
+        await xui.updateClientExpiry(inbound.id, xuiEmail, existingDays + parsedExpiryDays);
+      }
+    } else {
+      const createdClient = await xui.createClient(inbound.id, xuiEmail, parsedExpiryDays);
+      uuid = createdClient.uuid;
+      created = true;
+    }
+
+    await prisma.user.update({
+      where: { id: auth.id },
+      data: {
+        vpnUuid: uuid,
+        xuiEmail,
+        xuiInboundId: inbound.id,
+        vpnUpdatedAt: new Date()
+      }
+    });
+
+    return res.json({
+      vless: {
+        uuid,
+        link: xui.createVlessLink(uuid, label, inbound.port),
+        inboundId: inbound.id,
+        inboundTag: inbound.tag,
+        created
+      }
+    });
+  } catch (error) {
+    if (error instanceof XuiClientError) {
+      if (error.statusCode === 401 || error.statusCode === 403) {
+        return res.status(401).json({ error: "Неверный логин или пароль x-ui" });
+      }
+
+      return res.status(502).json({ error: `Ошибка x-ui: ${error.message}` });
+    }
+
+    throw error;
+  }
 }));
 
 export { subscriptionRouter };
