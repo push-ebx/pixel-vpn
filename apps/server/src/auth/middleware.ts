@@ -13,7 +13,7 @@ export type RequestWithAuth = Request & {
   auth?: AuthUser;
 };
 
-export function requireAuth(req: Request, res: Response, next: NextFunction) {
+export async function requireAuth(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
   let token = authHeader?.startsWith("Bearer ") ? authHeader.slice("Bearer ".length).trim() : null;
 

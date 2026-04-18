@@ -18,7 +18,7 @@ const applyPromoCodeSchema = z.object({
   promoCode: z.string().min(2).max(64)
 });
 
-function mapPromoCodeType(type: import("../prisma/client").PromoCodeType) {
+function mapPromoCodeType(type: "ONETIME" | "PERMANENT") {
   return type === "ONETIME" ? "onetime" : "permanent";
 }
 
