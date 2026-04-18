@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Shield, Zap, Lock, Globe, Activity } from "lucide-react";
+import { Shield, Zap, Lock, GitBranch, Activity } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
 export function Hero() {
@@ -72,11 +72,11 @@ export function Hero() {
               </div>
               <div className="flex items-start gap-3">
                 <div className="min-w-8 h-8 border border-accent/40 bg-accent/10 flex items-center justify-center">
-                  <Globe className="w-4 h-4 text-accent" />
+                  <GitBranch className="w-4 h-4 text-accent" />
                 </div>
                 <div>
-                  <p className="font-pixel-title text-[16px] md:text-[18px] tracking-[0.06em] text-text-primary">ДОСТУП</p>
-                  <p className="text-xs text-text-secondary">Подключение к нужным сервисам и стабильный обход ограничений</p>
+                  <p className="font-pixel-title text-[16px] md:text-[18px] tracking-[0.06em] text-text-primary">ТУННЕЛИРОВАНИЕ</p>
+                  <p className="text-xs text-text-secondary">Для российских сервисов не нужно отключать VPN: трафик к ним идет напрямую</p>
                 </div>
               </div>
             </div>
