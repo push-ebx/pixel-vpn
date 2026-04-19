@@ -90,8 +90,6 @@ services:
       PMA_USER: root
       PMA_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
       UPLOAD_LIMIT: 128M
-    ports:
-      - "8081:80"
     networks:
       - vpn
 
