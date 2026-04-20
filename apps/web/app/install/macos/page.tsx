@@ -13,7 +13,8 @@ const steps = [
     description: "Скачайте Hiddify для macOS",
     image: "/hiddify-desktop/img.png",
     links: [
-      { label: "Скачать", url: "https://github.com/hiddify/hiddify-app/releases" },
+      { label: "App Store", url: "https://apps.apple.com/us/app/hiddify-proxy-vpn/id6596777532" },
+      { label: "GitHub", url: "https://github.com/hiddify/hiddify-app/releases/tag/v4.1.1" },
     ],
   },
   {

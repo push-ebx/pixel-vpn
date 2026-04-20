@@ -37,15 +37,26 @@ export function FooterClient() {
             )}
           </nav>
 
-          <a
-            href="https://t.me/vpn_mini_app_bot"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="uppercase px-2 border border-border inline-flex items-center justify-center text-text-secondary hover:text-accent hover:border-accent/40 transition-colors"
-            aria-label="@vpn_mini_app_bot"
-          >
-            @vpn_mini_app_bot
-          </a>
+          <div className="flex items-center gap-2">
+            <a
+              href="https://t.me/pixel_v_p_n"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-2 border border-border inline-flex items-center justify-center text-text-secondary hover:text-accent hover:border-accent/40 transition-colors"
+              aria-label="Телеграм"
+            >
+              Телеграм
+            </a>
+            <a
+              href="https://t.me/vpn_mini_app_bot"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-2 border border-border inline-flex items-center justify-center text-text-secondary hover:text-accent hover:border-accent/40 transition-colors"
+              aria-label="Бот в Телеграм"
+            >
+              Бот в Телеграм
+            </a>
+          </div>
         </div>
 
         <div className="py-4 border-t border-border text-[14px] text-text-secondary terminal-text">
