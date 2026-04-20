@@ -11,7 +11,8 @@ const steps = [
     title: "Установите приложение",
     description: "Скачайте Hiddify из App Store",
     links: [
-      { label: "App Store", url: "https://apps.apple.com/us/app/hiddify-proxy-vpn/id6596777532" }
+      { label: "App Store", url: "https://apps.apple.com/us/app/hiddify-proxy-vpn/id6596777532" },
+      { label: "GitHub v4.1.1", url: "https://github.com/hiddify/hiddify-app/releases" }
     ]
   },
   {

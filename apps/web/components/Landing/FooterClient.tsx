@@ -38,13 +38,13 @@ export function FooterClient() {
           </nav>
 
           <a
-            href="https://t.me/pixel_v_p_n"
+            href="https://t.me/vpn_mini_app_bot"
             target="_blank"
             rel="noopener noreferrer"
             className="uppercase px-2 border border-border inline-flex items-center justify-center text-text-secondary hover:text-accent hover:border-accent/40 transition-colors"
-            aria-label="Telegram"
+            aria-label="@vpn_mini_app_bot"
           >
-            Telegram
+            @vpn_mini_app_bot
           </a>
         </div>
 

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Shield, ChevronLeft, ExternalLink } from "lucide-react";
+import { Shield, ChevronLeft, ExternalLink, Info } from "lucide-react";
 import { HeaderClient } from "@/components/Landing/HeaderClient";
 import { FooterClient } from "@/components/Landing/FooterClient";
 
@@ -113,6 +113,28 @@ export default function MacOSInstallPage() {
                     </div>
                   </div>
                 ))}
+
+                <div className="bg-card border border-border rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded bg-accent/20 text-accent flex items-center justify-center shrink-0">
+                      <Info className="w-4 h-4" />
+                    </div>
+                    <div className="space-y-3">
+                      <h3 className="font-medium">Если Hiddify недоступен в Mac App Store</h3>
+                      <p className="text-sm text-text-secondary">
+                        На Mac временно смените регион Apple ID, установите приложение и при необходимости верните регион обратно.
+                      </p>
+                      <ol className="text-sm text-text-secondary space-y-1 list-decimal pl-5">
+                        <li>Откройте App Store и нажмите на аватар профиля в левом нижнем углу.</li>
+                        <li>Нажмите «Account Settings» и войдите в Apple ID.</li>
+                        <li>В разделе Country/Region нажмите «Change Country or Region».</li>
+                        <li>Выберите регион, где доступен Hiddify, и сохраните изменения.</li>
+                        <li>Перезапустите App Store и снова откройте ссылку на скачивание.</li>
+                        <li>После установки приложения можно вернуть исходный регион.</li>
+                      </ol>
+                    </div>
+                  </div>
+                </div>
               </div>
             </section>
           </div>
