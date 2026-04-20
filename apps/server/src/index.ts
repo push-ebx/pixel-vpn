@@ -5,6 +5,7 @@ import helmet from "helmet";
 import morgan from "morgan";
 
 import { config, getAllowedOrigins } from "./config";
+import { createTelegramBotService } from "./bot/telegram-bot";
 import { prisma } from "./lib/prisma";
 import { adminRouter } from "./routes/admin";
 import { authRouter } from "./routes/auth";
@@ -15,6 +16,7 @@ import { promoCodesRouter } from "./routes/promocodes";
 import { subscriptionRouter } from "./routes/subscription";
 
 const app = express();
+const telegramBot = createTelegramBotService();
 
 const allowedOrigins = getAllowedOrigins();
 const corsOriginMatcher =
@@ -72,9 +74,11 @@ app.use((err: unknown, _req: express.Request, res: express.Response, _next: expr
 const server = app.listen(config.PORT, () => {
   // eslint-disable-next-line no-console
   console.log(`API running on http://localhost:${config.PORT}`);
+  telegramBot?.start();
 });
 
 const shutdown = async () => {
+  telegramBot?.stop();
   server.close(async () => {
     await prisma.$disconnect();
     process.exit(0);

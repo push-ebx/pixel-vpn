@@ -25,6 +25,12 @@ const envSchema = z.object({
   SBP_MERCHANT_NAME: z.string().default("Pixel VPN"),
   SBP_MERCHANT_BANK: z.string().default("MVP Bank"),
 
+  // Telegram bot
+  TELEGRAM_BOT_ENABLED: z.coerce.boolean().default(false),
+  TELEGRAM_BOT_TOKEN: z.string().optional(),
+  TELEGRAM_BOT_API_BASE_URL: z.string().url().default("https://api.telegram.org"),
+  TELEGRAM_BOT_REQUEST_TIMEOUT_MS: z.coerce.number().int().positive().default(30000),
+
   // x-ui API settings for managing VLESS users
   XUI_ENABLED: z.coerce.boolean().default(false),
   XUI_BASE_URL: z.string().url().optional(),

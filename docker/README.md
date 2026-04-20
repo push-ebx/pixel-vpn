@@ -14,6 +14,11 @@ For 3x-ui auto provisioning after payment, configure:
 `XUI_ENABLED`, `HOST_X_UI`, `PORT_X_UI`, `WEBBASEPATH`, `XUI_USERNAME`, `XUI_PASSWORD`,
 and Reality link params (`XRAY_HOST`, `XRAY_PORT`, `XRAY_PUBLIC_KEY`, `XRAY_SNI`, `XRAY_SHORT_ID`).
 You can also set `XUI_BASE_URL` (for example `https://host:port/webbasepath`) to override host/port/path in one variable.
+To enable Telegram bot with auto registration by Telegram ID, tariff purchase, subscription status, remaining time, VLESS key and platform instructions, set:
+`TELEGRAM_BOT_ENABLED=true` and `TELEGRAM_BOT_TOKEN=<your_bot_token>`.
+Optional network settings for restricted environments:
+`TELEGRAM_BOT_API_BASE_URL` (default `https://api.telegram.org`) and `TELEGRAM_BOT_REQUEST_TIMEOUT_MS` (default `30000`).
+After start, open your bot in Telegram and send `/start`.
 
 Stop all containers:
 
