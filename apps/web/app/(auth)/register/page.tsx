@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -14,7 +14,7 @@ interface FormData {
   confirmPassword: string;
 }
 
-export default function RegisterPage() {
+function RegisterPageInner() {
   const [serverError, setServerError] = useState<string | null>(null);
   const { register: registerUser, isLoading } = useAuthStore();
   const router = useRouter();
@@ -97,5 +97,13 @@ export default function RegisterPage() {
         </Button>
       </form>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense>
+      <RegisterPageInner />
+    </Suspense>
   );
 }
