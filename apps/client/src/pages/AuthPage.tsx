@@ -1,6 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Logo } from "../components/Logo";
 import { useAccountStore } from "../stores/account-store";
+
+const REFERRAL_KEY = "pixel-vpn-ref";
 
 type AuthMode = "login" | "register";
 
@@ -11,6 +13,14 @@ export default function AuthPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get("ref");
+    if (ref) {
+      window.localStorage.setItem(REFERRAL_KEY, ref);
+    }
+  }, []);
 
   const submitLabel = mode === "login" ? "Войти" : "Зарегистрироваться";
 

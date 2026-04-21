@@ -103,11 +103,20 @@ export type ApiPaymentIntent = {
   };
 };
 
-export async function registerApi(email: string, password: string) {
+export type ApiReferral = {
+  email: string;
+  totalPaid: number;
+};
+
+export async function registerApi(email: string, password: string, referredByEmail?: string) {
   return apiRequest<{ accessToken: string; user: ApiUser }>("/auth/register", {
     method: "POST",
-    body: { email, password }
+    body: { email, password, ...(referredByEmail ? { referredByEmail } : {}) }
   });
+}
+
+export async function getReferralsApi(token: string) {
+  return apiRequest<{ referrals: ApiReferral[] }>("/referrals", { token });
 }
 
 export async function loginApi(email: string, password: string) {

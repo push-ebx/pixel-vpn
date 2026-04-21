@@ -13,6 +13,7 @@ import { healthRouter } from "./routes/health";
 import { paymentsRouter } from "./routes/payments";
 import { plansRouter } from "./routes/plans";
 import { promoCodesRouter } from "./routes/promocodes";
+import { referralsRouter } from "./routes/referrals";
 import { subscriptionRouter } from "./routes/subscription";
 
 const app = express();
@@ -63,6 +64,7 @@ app.use("/api/plans", plansRouter);
 app.use("/api/payments", paymentsRouter);
 app.use("/api/promocodes", promoCodesRouter);
 app.use("/api/subscription", subscriptionRouter);
+app.use("/api/referrals", referralsRouter);
 app.use("/api/admin", adminRouter);
 
 app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

@@ -22,18 +22,23 @@ enum SubscriptionStatus {
 }
 
 model User {
-  id            String          @id @default(cuid())
-  email         String          @unique @db.VarChar(191)
-  passwordHash  String         @db.VarChar(255)
-  isAdmin      Boolean         @default(false)
-  vpnUuid       String?         @unique @db.VarChar(36)
-  vpnUpdatedAt  DateTime?
-  xuiEmail      String?         @unique @db.VarChar(191)
-  xuiInboundId  Int?
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  paymentIntents PaymentIntent[]
-  subscription  Subscription?
+  id               String          @id @default(cuid())
+  email            String          @unique @db.VarChar(191)
+  passwordHash     String          @db.VarChar(255)
+  isAdmin          Boolean         @default(false)
+  vpnUuid          String?         @unique @db.VarChar(36)
+  vpnUpdatedAt     DateTime?
+  xuiEmail         String?         @unique @db.VarChar(191)
+  xuiInboundId     Int?
+  referredByUserId String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  paymentIntents   PaymentIntent[]
+  subscription     Subscription?
+  referredByUser   User?           @relation("Referrals", fields: [referredByUserId], references: [id], onDelete: SetNull)
+  referrals        User[]          @relation("Referrals")
+
+  @@index([referredByUserId])
 }
 
 model Plan {

@@ -52,7 +52,12 @@ export default function BillingPage() {
     currentPayment,
     paymentLoading,
     paymentError,
-    refreshPaymentIntent
+    refreshPaymentIntent,
+    user,
+    referrals,
+    referralsLoading,
+    referralsError,
+    loadReferrals
   } = useAccountStore();
 
   const sortedPlans = useMemo(() => {
@@ -63,7 +68,8 @@ export default function BillingPage() {
 
   useEffect(() => {
     void loadSubscription();
-  }, [loadSubscription]);
+    void loadReferrals();
+  }, [loadSubscription, loadReferrals]);
 
   useEffect(() => {
     const refreshSubscription = () => {
@@ -158,6 +164,35 @@ export default function BillingPage() {
               </button>
             </div>
           ))}
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <p className="text-xs font-pixel-title text-text-secondary">рефералы</p>
+        {user && (
+          <div className="pixel-card p-3 flex flex-col gap-1">
+            <p className="text-[10px] text-text-secondary terminal-text">ваша реферальная ссылка</p>
+            <p className="text-[10px] text-text-primary break-all select-all">
+              https://pixel-vpn.ru?ref={user.email}
+            </p>
+          </div>
+        )}
+        {referralsLoading && (
+          <div className="pixel-card p-3 text-xs text-text-secondary">загрузка...</div>
+        )}
+        {referralsError && (
+          <div className="terminal-text error text-[10px] p-2">{referralsError}</div>
+        )}
+        {!referralsLoading && referrals.length === 0 && !referralsError && (
+          <div className="pixel-card p-3 text-[10px] text-text-secondary terminal-text">
+            нет оплативших рефералов
+          </div>
+        )}
+        {!referralsLoading && referrals.map((ref) => (
+          <div key={ref.email} className="pixel-card p-3 flex items-center justify-between">
+            <p className="text-xs text-text-primary">{ref.email}</p>
+            <p className="text-[10px] text-text-secondary terminal-text">{ref.totalPaid}₽</p>
+          </div>
+        ))}
       </div>
 
       {currentPayment && (

@@ -3,6 +3,7 @@ import {
   ApiError,
   type ApiPaymentIntent,
   type ApiPlan,
+  type ApiReferral,
   type ApiSubscription,
   type ApiVless,
   type ApiUser,
@@ -11,12 +12,14 @@ import {
   getMeApi,
   getPaymentIntentApi,
   getPlansApi,
+  getReferralsApi,
   getSubscriptionVlessApi,
   loginApi,
   registerApi
 } from "../lib/api";
 
 const TOKEN_STORAGE_KEY = "pixel-vpn-auth-token";
+const REFERRAL_KEY = "pixel-vpn-ref";
 
 function readStoredToken() {
   if (typeof window === "undefined") {
@@ -77,9 +80,14 @@ interface AccountState {
   paymentLoading: boolean;
   paymentError: string | null;
 
+  referrals: ApiReferral[];
+  referralsLoading: boolean;
+  referralsError: string | null;
+
   hydrateAuth: () => Promise<boolean>;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
+  loadReferrals: () => Promise<void>;
   logout: () => void;
   loadPlans: () => Promise<void>;
   loadSubscription: () => Promise<void>;
@@ -112,6 +120,10 @@ export const useAccountStore = create<AccountState>((set, get) => ({
   currentPayment: null,
   paymentLoading: false,
   paymentError: null,
+
+  referrals: [],
+  referralsLoading: false,
+  referralsError: null,
 
   hydrateAuth: async () => {
     const token = get().token;
@@ -166,7 +178,13 @@ export const useAccountStore = create<AccountState>((set, get) => ({
   register: async (email: string, password: string) => {
     set({ authLoading: true, authError: null });
     try {
-      const response = await registerApi(email.trim().toLowerCase(), password);
+      const referredByEmail = typeof window !== "undefined"
+        ? (window.localStorage.getItem(REFERRAL_KEY) ?? undefined)
+        : undefined;
+      const response = await registerApi(email.trim().toLowerCase(), password, referredByEmail);
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem(REFERRAL_KEY);
+      }
       writeStoredToken(response.accessToken);
       set({
         token: response.accessToken,
@@ -341,6 +359,19 @@ export const useAccountStore = create<AccountState>((set, get) => ({
         paymentLoading: false,
         paymentError: normalizeError(error)
       });
+    }
+  },
+
+  loadReferrals: async () => {
+    const token = get().token;
+    if (!token) return;
+
+    set({ referralsLoading: true, referralsError: null });
+    try {
+      const response = await getReferralsApi(token);
+      set({ referrals: response.referrals, referralsLoading: false });
+    } catch (error) {
+      set({ referralsLoading: false, referralsError: normalizeError(error) });
     }
   },
 

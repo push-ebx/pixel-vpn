@@ -18,7 +18,8 @@ const AUTH_COOKIE_OPTIONS = {
 
 const registerSchema = z.object({
   email: z.string().email().max(191).transform((value) => value.toLowerCase().trim()),
-  password: z.string().min(8).max(72)
+  password: z.string().min(8).max(72),
+  referredByEmail: z.string().email().max(191).optional().transform((value) => value?.toLowerCase().trim())
 });
 
 const loginSchema = registerSchema;
@@ -29,17 +30,26 @@ authRouter.post("/register", asyncHandler(async (req, res) => {
     return res.status(400).json({ error: "Некорректные данные", details: parsed.error.flatten() });
   }
 
-  const { email, password } = parsed.data;
+  const { email, password, referredByEmail } = parsed.data;
   const existingUser = await prisma.user.findUnique({ where: { email } });
   if (existingUser) {
     return res.status(409).json({ error: "Эта почта уже используется" });
+  }
+
+  let referredByUserId: string | undefined;
+  if (referredByEmail && referredByEmail !== email) {
+    const referrer = await prisma.user.findUnique({ where: { email: referredByEmail }, select: { id: true } });
+    if (referrer) {
+      referredByUserId = referrer.id;
+    }
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
   const user = await prisma.user.create({
     data: {
       email,
-      passwordHash
+      passwordHash,
+      ...(referredByUserId ? { referredByUserId } : {})
     }
   });
 
