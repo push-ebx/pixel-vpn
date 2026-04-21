@@ -17,7 +17,7 @@ interface AuthStore {
   isLoading: boolean;
   isInitialized: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  register: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  register: (email: string, password: string, referredByEmail?: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
 }
@@ -42,9 +42,9 @@ export const useAuthStore = create<AuthStore>()(
         return { success: true };
       },
 
-      register: async (email, password) => {
+      register: async (email, password, referredByEmail) => {
         set({ isLoading: true });
-        const { data, error } = await api.register(email, password);
+        const { data, error } = await api.register(email, password, referredByEmail);
         set({ isLoading: false });
 
         if (error || !data) {

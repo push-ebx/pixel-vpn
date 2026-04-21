@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -18,6 +18,8 @@ export default function RegisterPage() {
   const [serverError, setServerError] = useState<string | null>(null);
   const { register: registerUser, isLoading } = useAuthStore();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const ref = searchParams.get("ref") ?? undefined;
   const {
     register,
     handleSubmit,
@@ -27,7 +29,7 @@ export default function RegisterPage() {
 
   const onSubmit = async (data: FormData) => {
     setServerError(null);
-    const result = await registerUser(data.email, data.password);
+    const result = await registerUser(data.email, data.password, ref);
     if (result.success) {
       router.replace("/dashboard");
     } else {

@@ -132,10 +132,10 @@ interface PaymentIntent {
 }
 
 // Auth API
-export async function register(email: string, password: string): Promise<ApiResponse<AuthResponse>> {
+export async function register(email: string, password: string, referredByEmail?: string): Promise<ApiResponse<AuthResponse>> {
   const response = await fetchApi<AuthResponse>("/api/auth/register", {
     method: "POST",
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ email, password, ...(referredByEmail ? { referredByEmail } : {}) }),
   });
 
   if (response.data?.accessToken) {

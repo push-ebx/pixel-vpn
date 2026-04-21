@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -17,6 +17,9 @@ export default function LoginPage() {
   const [serverError, setServerError] = useState<string | null>(null);
   const { login, isLoading } = useAuthStore();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const ref = searchParams.get("ref");
+  const registerHref = ref ? `/register?ref=${encodeURIComponent(ref)}` : "/register";
   const {
     register,
     handleSubmit,
@@ -38,7 +41,7 @@ export default function LoginPage() {
       <h1 className="text-2xl font-bold text-text-primary mb-2">Вход в аккаунт</h1>
       <p className="text-text-secondary mb-6">
         Нет аккаунта?{" "}
-        <Link href="/register" className="text-accent hover:text-accent-hover">
+        <Link href={registerHref} className="text-accent hover:text-accent-hover">
           Зарегистрируйтесь
         </Link>
       </p>
