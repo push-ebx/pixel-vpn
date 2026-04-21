@@ -184,13 +184,17 @@ export default function BillingPage() {
         )}
         {!referralsLoading && referrals.length === 0 && !referralsError && (
           <div className="pixel-card p-3 text-[10px] text-text-secondary terminal-text">
-            нет оплативших рефералов
+            нет рефералов
           </div>
         )}
         {!referralsLoading && referrals.map((ref) => (
-          <div key={ref.email} className="pixel-card p-3 flex items-center justify-between">
-            <p className="text-xs text-text-primary">{ref.email}</p>
-            <p className="text-[10px] text-text-secondary terminal-text">{ref.totalPaid}₽</p>
+          <div key={ref.email} className="pixel-card p-3 flex items-center justify-between gap-2">
+            <p className="text-xs text-text-primary truncate">{ref.email}</p>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className={`text-[10px] terminal-text ${ref.paid ? "text-accent" : "text-text-secondary"}`}>
+                {ref.paid ? `${ref.totalPaid}₽` : "не оплатил"}
+              </span>
+            </div>
           </div>
         ))}
       </div>

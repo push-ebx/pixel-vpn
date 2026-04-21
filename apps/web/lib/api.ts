@@ -194,6 +194,17 @@ export async function getPaymentIntent(intentId: string): Promise<ApiResponse<{ 
   return fetchApi<{ paymentIntent: PaymentIntent }>(`/api/payments/intents/${intentId}`);
 }
 
+// Referrals API
+export interface Referral {
+  email: string;
+  totalPaid: number;
+  paid: boolean;
+}
+
+export async function getReferrals(): Promise<ApiResponse<{ referrals: Referral[] }>> {
+  return fetchApi<{ referrals: Referral[] }>("/api/referrals");
+}
+
 // Mock payment for testing
 export async function mockPaymentSuccess(intentId: string): Promise<ApiResponse<{ ok: boolean }>> {
   return fetchApi<{ ok: boolean }>(`/api/payments/intents/${intentId}/mock-success`, {

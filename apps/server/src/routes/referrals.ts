@@ -21,12 +21,14 @@ referralsRouter.get("/", requireAuth, asyncHandler(async (req, res) => {
     }
   });
 
-  const referrals = referred
-    .map((user) => ({
+  const referrals = referred.map((user) => {
+    const totalPaid = user.paymentIntents.reduce((sum, p) => sum + p.amountRub, 0);
+    return {
       email: user.email,
-      totalPaid: user.paymentIntents.reduce((sum, p) => sum + p.amountRub, 0)
-    }))
-    .filter((r) => r.totalPaid > 0);
+      totalPaid,
+      paid: totalPaid > 0
+    };
+  });
 
   return res.json({ referrals });
 }));

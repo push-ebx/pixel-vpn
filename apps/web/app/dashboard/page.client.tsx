@@ -36,6 +36,7 @@ export default function DashboardClient() {
   const [vless, setVless] = useState<VlessData | null>(null);
   const [remainingMs, setRemainingMs] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [referrals, setReferrals] = useState<api.Referral[]>([]);
 
   useEffect(() => {
     checkAuth();
@@ -65,6 +66,12 @@ export default function DashboardClient() {
           setVless(vlessRes.data.vless);
         }
       }
+
+      const refRes = await api.getReferrals();
+      if (refRes.data) {
+        setReferrals(refRes.data.referrals);
+      }
+
       setLoading(false);
     };
 
@@ -258,6 +265,37 @@ export default function DashboardClient() {
                 </CardContent>
             </Card>
           )}
+          <Card>
+            <CardHeader>
+              <CardTitle>Реферальная программа</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="p-3 bg-background rounded border border-border">
+                <p className="text-xs text-text-secondary mb-1">Ваша реферальная ссылка</p>
+                <div className="flex items-center gap-2">
+                  <code className="text-sm text-text-primary break-all flex-1">
+                    https://pixel-vpn.ru?ref={user.email}
+                  </code>
+                  <CopyButton text={`https://pixel-vpn.ru?ref=${user.email}`} size="sm" className="shrink-0" />
+                </div>
+              </div>
+
+              {referrals.length === 0 ? (
+                <p className="text-sm text-text-secondary">Нет рефералов</p>
+              ) : (
+                <div className="space-y-2">
+                  {referrals.map((ref) => (
+                    <div key={ref.email} className="flex items-center justify-between gap-2 text-sm py-2 border-b border-border last:border-0">
+                      <span className="text-text-primary truncate">{ref.email}</span>
+                      <span className={`shrink-0 font-medium ${ref.paid ? "text-accent" : "text-text-secondary"}`}>
+                        {ref.paid ? `${ref.totalPaid} ₽` : "не оплатил"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </main>
     </div>

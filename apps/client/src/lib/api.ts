@@ -106,6 +106,7 @@ export type ApiPaymentIntent = {
 export type ApiReferral = {
   email: string;
   totalPaid: number;
+  paid: boolean;
 };
 
 export async function registerApi(email: string, password: string, referredByEmail?: string) {
