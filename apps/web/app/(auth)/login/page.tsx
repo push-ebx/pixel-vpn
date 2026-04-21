@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -13,7 +13,7 @@ interface FormData {
   password: string;
 }
 
-export default function LoginPage() {
+function LoginPageInner() {
   const [serverError, setServerError] = useState<string | null>(null);
   const { login, isLoading } = useAuthStore();
   const router = useRouter();
@@ -84,5 +84,13 @@ export default function LoginPage() {
         </Button>
       </form>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginPageInner />
+    </Suspense>
   );
 }
