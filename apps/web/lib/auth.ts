@@ -10,6 +10,7 @@ interface User {
   id: string;
   email: string;
   isAdmin: boolean;
+  referralCode: string;
 }
 
 interface AuthStore {
@@ -17,7 +18,7 @@ interface AuthStore {
   isLoading: boolean;
   isInitialized: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  register: (email: string, password: string, referredByEmail?: string) => Promise<{ success: boolean; error?: string }>;
+  register: (email: string, password: string, referralCode?: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
 }
@@ -42,9 +43,9 @@ export const useAuthStore = create<AuthStore>()(
         return { success: true };
       },
 
-      register: async (email, password, referredByEmail) => {
+      register: async (email, password, referralCode) => {
         set({ isLoading: true });
-        const { data, error } = await api.register(email, password, referredByEmail);
+        const { data, error } = await api.register(email, password, referralCode);
         set({ isLoading: false });
 
         if (error || !data) {

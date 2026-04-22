@@ -26,6 +26,7 @@ model User {
   email            String          @unique @db.VarChar(191)
   passwordHash     String          @db.VarChar(255)
   isAdmin          Boolean         @default(false)
+  referralCode     String?         @unique @db.VarChar(16)
   vpnUuid          String?         @unique @db.VarChar(36)
   vpnUpdatedAt     DateTime?
   xuiEmail         String?         @unique @db.VarChar(191)

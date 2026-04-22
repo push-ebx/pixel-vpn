@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { useAuthStore } from "@/lib/auth";
+import { getReferralCode, clearReferralCode } from "@/lib/referral";
 
 interface FormData {
   email: string;
@@ -19,7 +20,7 @@ function RegisterPageInner() {
   const { register: registerUser, isLoading } = useAuthStore();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const ref = searchParams.get("ref") ?? undefined;
+  const ref = searchParams.get("ref") ?? getReferralCode() ?? undefined;
   const {
     register,
     handleSubmit,
@@ -31,6 +32,7 @@ function RegisterPageInner() {
     setServerError(null);
     const result = await registerUser(data.email, data.password, ref);
     if (result.success) {
+      clearReferralCode();
       router.replace("/dashboard");
     } else {
       setServerError(result.error || "Ошибка регистрации");

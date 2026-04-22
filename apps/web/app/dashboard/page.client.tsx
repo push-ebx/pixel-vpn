@@ -299,9 +299,9 @@ export default function DashboardClient() {
                 <p className="text-xs text-text-secondary mb-1">Ваша реферальная ссылка</p>
                 <div className="flex items-center gap-2">
                   <code className="text-sm text-text-primary break-all flex-1">
-                    https://pixel-vpn.ru?ref={user.email}
+                    https://pixel-vpn.ru?ref={user.referralCode}
                   </code>
-                  <CopyButton text={`https://pixel-vpn.ru?ref=${user.email}`} size="sm" className="shrink-0" />
+                  <CopyButton text={`https://pixel-vpn.ru?ref=${user.referralCode}`} size="sm" className="shrink-0" />
                 </div>
               </div>
 

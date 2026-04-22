@@ -78,6 +78,7 @@ interface User {
   id: string;
   email: string;
   isAdmin: boolean;
+  referralCode: string;
 }
 
 interface AuthResponse {
@@ -132,10 +133,10 @@ interface PaymentIntent {
 }
 
 // Auth API
-export async function register(email: string, password: string, referredByEmail?: string): Promise<ApiResponse<AuthResponse>> {
+export async function register(email: string, password: string, referralCode?: string): Promise<ApiResponse<AuthResponse>> {
   const response = await fetchApi<AuthResponse>("/api/auth/register", {
     method: "POST",
-    body: JSON.stringify({ email, password, ...(referredByEmail ? { referredByEmail } : {}) }),
+    body: JSON.stringify({ email, password, ...(referralCode ? { referralCode } : {}) }),
   });
 
   if (response.data?.accessToken) {

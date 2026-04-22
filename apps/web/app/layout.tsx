@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import "./globals.css";
 import { Toaster } from "@/components/ui/Toaster";
+import { RefCapture } from "@/components/RefCapture";
 import { SITE_DESCRIPTION, SITE_LOCALE, SITE_NAME, SITE_URL, absoluteUrl } from "@/lib/seo";
 
 export const metadata: Metadata = {
@@ -110,6 +112,9 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
         />
+        <Suspense>
+          <RefCapture />
+        </Suspense>
         {children}
         <Toaster />
       </body>
