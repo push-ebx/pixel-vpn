@@ -430,6 +430,23 @@ class TelegramBotService {
 
     const expiresAt = new Date(Date.now() + config.PAYMENT_INTENT_TTL_MINUTES * 60_000);
 
+    if (plan.code.toUpperCase() === "TRIAL") {
+      const usedTrial = await prisma.subscription.findFirst({
+        where: {
+          userId,
+          plan: {
+            code: "TRIAL"
+          }
+        },
+        select: { id: true }
+      });
+
+      if (usedTrial) {
+        await this.sendMessage(chatId, "Пробный период уже был использован.", statusKeyboard());
+        return;
+      }
+    }
+
     if (plan.priceRub <= 0) {
       const freeIntent = await prisma.paymentIntent.create({
         data: {

@@ -236,6 +236,31 @@ export default function DashboardClient() {
                   </Link>
                 </CardContent>
               </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Инструкции по подключению</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Link href="/install/android">
+                      <Button variant="secondary" className="w-full justify-start">Android</Button>
+                    </Link>
+                    <Link href="/install/ios">
+                      <Button variant="secondary" className="w-full justify-start">iOS</Button>
+                    </Link>
+                    <Link href="/install/windows">
+                      <Button variant="secondary" className="w-full justify-start">Windows</Button>
+                    </Link>
+                    <Link href="/install/macos">
+                      <Button variant="secondary" className="w-full justify-start">macOS</Button>
+                    </Link>
+                  </div>
+                  <p className="text-xs text-text-secondary mt-4">
+                    Если приложение уже установлено, просто откройте нужную инструкцию и импортируйте VLESS-ключ из этого кабинета.
+                  </p>
+                </CardContent>
+              </Card>
             </>
           ) : (
             <Card>

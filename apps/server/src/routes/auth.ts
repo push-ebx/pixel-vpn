@@ -6,6 +6,7 @@ import { getAuthUser, requireAuth } from "../auth/middleware";
 import { signAccessToken } from "../auth/jwt";
 import { asyncHandler } from "../lib/async-handler";
 import { prisma } from "../lib/prisma";
+import { notifyNewUserRegistered } from "../bot/admin-notify";
 
 const authRouter = Router();
 const AUTH_COOKIE_NAME = "pixel-vpn-web-auth-token";
@@ -51,6 +52,12 @@ authRouter.post("/register", asyncHandler(async (req, res) => {
       passwordHash,
       ...(referredByUserId ? { referredByUserId } : {})
     }
+  });
+
+  await notifyNewUserRegistered({
+    email: user.email,
+    userId: user.id,
+    referredByEmail: referredByEmail ?? null
   });
 
   const accessToken = signAccessToken({

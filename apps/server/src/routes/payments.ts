@@ -109,6 +109,24 @@ paymentsRouter.post("/intents", requireAuth, asyncHandler(async (req, res) => {
 
   const expiresAt = new Date(Date.now() + config.PAYMENT_INTENT_TTL_MINUTES * 60_000);
 
+  if (plan.code.toUpperCase() === "TRIAL") {
+    const usedTrial = await prisma.subscription.findFirst({
+      where: {
+        userId: auth.id,
+        plan: {
+          code: "TRIAL"
+        }
+      },
+      select: { id: true }
+    });
+
+    if (usedTrial) {
+      return res.status(400).json({
+        error: "Пробный период уже был использован"
+      });
+    }
+  }
+
   if (amountRub <= 0) {
     const freeIntent = await prisma.paymentIntent.create({
       data: {

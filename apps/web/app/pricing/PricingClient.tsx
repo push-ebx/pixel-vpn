@@ -155,12 +155,12 @@ export default function PricingClient({ initialPlans }: PricingClientProps) {
           setPaymentError(mockResult.error);
           return;
         }
-        router.push("/install/android");
+        router.push(plan.priceRub <= 0 ? "/dashboard" : "/install/android");
         return;
       }
 
       if (paymentIntent.status === "paid") {
-        router.push("/install/android");
+        router.push(plan.priceRub <= 0 ? "/dashboard" : "/install/android");
         return;
       }
 
@@ -176,7 +176,7 @@ export default function PricingClient({ initialPlans }: PricingClientProps) {
       }
 
       if (updated?.paymentIntent?.status === "paid") {
-        router.push("/install/android");
+        router.push(plan.priceRub <= 0 ? "/dashboard" : "/install/android");
         return;
       }
 
