@@ -67,7 +67,11 @@ checkAuth: async () => {
           currentState.user === null ||
           typeof (currentState.user as { isAdmin?: unknown }).isAdmin === "boolean";
 
-        if (currentState.isInitialized && hasResolvedAdminFlag) {
+        const hasReferralCode =
+          currentState.user === null ||
+          typeof (currentState.user as { referralCode?: unknown }).referralCode === "string";
+
+        if (currentState.isInitialized && hasResolvedAdminFlag && hasReferralCode) {
           return;
         }
 
