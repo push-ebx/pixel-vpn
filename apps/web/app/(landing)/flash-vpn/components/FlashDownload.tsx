@@ -23,6 +23,9 @@ export function FlashDownload() {
           <h2 className="text-4xl sm:text-5xl font-bold text-white">
             Везде одинаково быстро
           </h2>
+          <p className="mt-4 text-slate-400 max-w-2xl mx-auto">
+            Установите Hiddify на нужную платформу, затем импортируйте VPN-ключ из личного кабинета.
+          </p>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 max-w-4xl mx-auto">
@@ -44,7 +47,7 @@ export function FlashDownload() {
         </div>
 
         <p className="text-center text-slate-500 mt-8">
-          Или используйте конфигурацию для любого WireGuard клиента
+          Hiddify поддерживает Android, iOS, Windows, macOS и Linux.
         </p>
       </div>
     </section>

@@ -14,6 +14,9 @@ export function NovaCTA() {
         <p className="text-xl text-blue-100 mb-10 max-w-2xl mx-auto">
           Присоединяйтесь к 50 000+ пользователей, которые уже выбрали Nova VPN
         </p>
+        <p className="text-base text-blue-100 mb-8 max-w-2xl mx-auto">
+          Для подключения установите Hiddify на свое устройство и добавьте VPN-ключ из личного кабинета.
+        </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link href="/register">
             <Button

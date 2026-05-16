@@ -7,8 +7,8 @@ const steps = [
   {
     icon: Download,
     step: 1,
-    title: "Скачайте приложение",
-    description: "Установите NoDino VPN на любое устройство за 1 минуту.",
+    title: "Установите Hiddify",
+    description: "Поставьте Hiddify на свое устройство и добавьте VPN-ключ из личного кабинета.",
   },
   {
     icon: MousePointer,
