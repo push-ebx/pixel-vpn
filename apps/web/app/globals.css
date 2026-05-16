@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 :root {
+  /* CSS переменные для тем - начальные значения (pixel тема) */
   --background: #0a0a0a;
   --card: #141414;
   --card-hover: #1a1a1a;
@@ -13,6 +14,9 @@
   --success: #5674d6;
   --error: #ef4444;
   --border: #2a2a2a;
+  --border-radius: 4px;
+  --shadow: none;
+  --font-family: "SF Mono", "JetBrains Mono", "Fira Code", "Consolas", monospace;
 }
 
 * {
@@ -27,7 +31,7 @@ html {
 }
 
 body {
-  font-family: "SF Mono", "JetBrains Mono", "Fira Code", "Consolas", monospace;
+  font-family: var(--font-family);
   font-size: 1rem;
   line-height: 1.5;
   letter-spacing: 0.01em;
@@ -36,6 +40,7 @@ body {
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 ::selection {

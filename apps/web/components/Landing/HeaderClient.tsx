@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useAuthStore } from "@/lib/auth";
 import { useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import { ThemeSwitcher } from "@/lib/theme";
 
 const linkClass = "h-10 px-3 inline-flex items-center border border-transparent text-sm md:text-base font-pixel-title tracking-[0.06em] text-text-secondary hover:text-accent hover:border-border transition-colors";
 
@@ -36,6 +37,9 @@ export function HeaderClient() {
           </Link>
 
           <div className="flex items-center gap-1">
+            {/* Переключатель темы */}
+            {/*<ThemeSwitcher className="hidden md:flex mr-4" />*/}
+
             {user ? (
               <Link
                 href="/dashboard"

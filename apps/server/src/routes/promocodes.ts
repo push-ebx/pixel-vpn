@@ -7,8 +7,10 @@ import { prisma } from "../lib/prisma";
 
 const promoCodesRouter = Router();
 promoCodesRouter.use(requireAuth);
+const DEFAULT_LANDING_SLUG = "pixel-vpn";
 
 const planIdSchema = z.string().min(1).max(191);
+const landingSlugSchema = z.string().trim().toLowerCase().regex(/^[a-z0-9-]{2,64}$/);
 
 const validatePromoCodeSchema = z.object({
   code: z.string().min(2).max(64)
@@ -17,7 +19,8 @@ const validatePromoCodeSchema = z.object({
 const applyPromoCodeSchema = z.object({
   planId: planIdSchema.optional(),
   planCode: z.string().min(2).max(64).optional(),
-  promoCode: z.string().min(2).max(64)
+  promoCode: z.string().min(2).max(64),
+  landingSlug: landingSlugSchema.optional()
 });
 
 function mapPromoCodeType(type: "ONETIME" | "PERMANENT") {
@@ -114,12 +117,14 @@ promoCodesRouter.post("/apply", asyncHandler(async (req, res) => {
   }
 
   const { planId, planCode, promoCode: codeInput } = parsed.data;
+  const landingSlug = parsed.data.landingSlug ?? DEFAULT_LANDING_SLUG;
   const code = codeInput.toUpperCase();
   const now = new Date();
 
   const plan = await prisma.plan.findFirst({
     where: {
       isActive: true,
+      landingSlug,
       ...(planId ? { id: planId } : {}),
       ...(planCode ? { code: planCode } : {})
     }
@@ -181,7 +186,7 @@ promoCodesRouter.post("/apply", asyncHandler(async (req, res) => {
   if (promoCode.discountPercent >= 100) {
     const { markPaymentIntentPaid } = await import("../payments/service");
     const freePlan = await prisma.plan.findFirst({
-      where: { code: "TRIAL", isActive: true }
+      where: { code: "TRIAL", isActive: true, landingSlug }
     });
 
     if (!freePlan) {
@@ -195,6 +200,7 @@ promoCodesRouter.post("/apply", asyncHandler(async (req, res) => {
         userId: auth.id,
         planId: freePlan.id,
         promoCodeId: promoCode.id,
+        landingSlug,
         amountRub: 0,
         provider: "promocode",
         status: "PENDING",

@@ -136,11 +136,8 @@ export default function DashboardClient() {
     <div className="min-h-screen bg-background overflow-x-hidden">
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-3 sm:py-4 flex items-center justify-between gap-3">
-          <Link href="/" className="flex items-center gap-2 shrink-0 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center">
-              <span className="text-white font-bold text-sm">P</span>
-            </div>
-            <span className="text-base sm:text-lg font-bold text-text-primary whitespace-nowrap">Pixel VPN</span>
+          <Link href="/" className="text-base sm:text-lg font-bold text-text-primary whitespace-nowrap">
+            VPN Service
           </Link>
 
           <div className="min-w-0 flex items-center justify-end gap-1 sm:gap-3">
@@ -228,7 +225,7 @@ export default function DashboardClient() {
                     <p className="text-text-primary font-medium">Нужно больше дней?</p>
                     <p className="text-sm text-text-secondary">Продлите подписку со скидкой</p>
                   </div>
-                  <Link href="/pricing">
+                  <Link href="/#pricing">
                     <Button>
                       <ExternalLink className="w-4 h-4 mr-2" />
                       Продлить
@@ -275,7 +272,7 @@ export default function DashboardClient() {
                     Приобретите подписку для получения VLESS конфигурации и доступа к VPN серверам.
                   </p>
                   <div className="flex flex-col sm:flex-row gap-3">
-                    <Link href="/pricing" className="flex-1">
+                    <Link href="/#pricing" className="flex-1">
                       <Button className="w-full">
                         <Download className="w-4 h-4 mr-2" />
                         Выбрать тариф
@@ -299,9 +296,9 @@ export default function DashboardClient() {
                 <p className="text-xs text-text-secondary mb-1">Ваша реферальная ссылка</p>
                 <div className="flex items-center gap-2">
                   <code className="text-sm text-text-primary break-all flex-1">
-                    https://pixel-vpn.ru?ref={user.referralCode}
+                    https://vpn-service.ru?ref={user.referralCode}
                   </code>
-                  <CopyButton text={`https://pixel-vpn.ru?ref=${user.referralCode}`} size="sm" className="shrink-0" />
+                  <CopyButton text={`https://vpn-service.ru?ref=${user.referralCode}`} size="sm" className="shrink-0" />
                 </div>
               </div>
 

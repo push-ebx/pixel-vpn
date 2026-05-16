@@ -10,14 +10,17 @@ import { createYooKassaPayment, hasYooKassaCredentials } from "../payments/yooka
 import { markPaymentIntentPaid, syncPaymentIntentStatus } from "../payments/service";
 
 const paymentsRouter = Router();
+const DEFAULT_LANDING_SLUG = "pixel-vpn";
 
 const planIdSchema = z.string().min(1).max(191);
+const landingSlugSchema = z.string().trim().toLowerCase().regex(/^[a-z0-9-]{2,64}$/);
 
 const createIntentSchema = z
   .object({
     planId: planIdSchema.optional(),
     planCode: z.string().min(2).max(64).optional(),
-    promoCode: z.string().min(2).max(64).optional()
+    promoCode: z.string().min(2).max(64).optional(),
+    landingSlug: landingSlugSchema.optional()
   })
   .refine((input) => Boolean(input.planId || input.planCode), {
     message: "Нужно передать planId или planCode"
@@ -40,9 +43,11 @@ paymentsRouter.post("/intents", requireAuth, asyncHandler(async (req, res) => {
   }
 
   const { planId, planCode, promoCode: promoCodeInput } = parsed.data;
+  const landingSlug = parsed.data.landingSlug ?? DEFAULT_LANDING_SLUG;
   const plan = await prisma.plan.findFirst({
     where: {
       isActive: true,
+      landingSlug,
       ...(planId ? { id: planId } : {}),
       ...(planCode ? { code: planCode } : {})
     }
@@ -133,6 +138,7 @@ paymentsRouter.post("/intents", requireAuth, asyncHandler(async (req, res) => {
         userId: auth.id,
         planId: plan.id,
         promoCodeId: appliedPromoCodeId,
+        landingSlug,
         amountRub: 0,
         provider: promoCodeInput ? "promocode" : "free",
         status: PaymentStatus.PENDING,
@@ -173,6 +179,7 @@ paymentsRouter.post("/intents", requireAuth, asyncHandler(async (req, res) => {
       userId: auth.id,
       planId: plan.id,
       promoCodeId: appliedPromoCodeId,
+      landingSlug,
       amountRub,
       provider: "yookassa",
       status: PaymentStatus.PENDING,

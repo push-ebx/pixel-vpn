@@ -4,6 +4,7 @@ import { prisma } from "../lib/prisma";
 import { getYooKassaPayment } from "./yookassa";
 import { generateUserVlessUuid } from "../vpn/vless";
 import { config } from "../config";
+import { notifyPaymentPaid } from "../bot/admin-notify";
 import { getXuiClient, XuiClientError } from "../vpn/xui-client";
 
 function addDays(base: Date, days: number) {
@@ -188,6 +189,7 @@ export async function markPaymentIntentPaid(intentId: string, userId?: string) {
         if (!paidUser?.vpnUuid || !paidUser.xuiEmail || paidUser.xuiInboundId == null) {
           return {
             paymentIntent: intent,
+            shouldNotifyPayment: false,
             xuiAction: "create" as const,
             xuiPayload: {
               userId: intent.userId,
@@ -198,6 +200,7 @@ export async function markPaymentIntentPaid(intentId: string, userId?: string) {
       } else if (!paidUser?.vpnUuid) {
         return {
           paymentIntent: intent,
+          shouldNotifyPayment: false,
           xuiAction: "create" as const,
           xuiPayload: {
             userId: intent.userId,
@@ -208,6 +211,7 @@ export async function markPaymentIntentPaid(intentId: string, userId?: string) {
 
       return {
         paymentIntent: intent,
+        shouldNotifyPayment: false,
         xuiAction: "none" as const
       };
     }
@@ -230,7 +234,7 @@ export async function markPaymentIntentPaid(intentId: string, userId?: string) {
         status: PaymentStatus.PAID,
         paidAt: now
       },
-      include: { plan: true }
+      include: { plan: true, user: { select: { email: true } } }
     });
 
     const user = await tx.user.findUnique({
@@ -283,6 +287,7 @@ export async function markPaymentIntentPaid(intentId: string, userId?: string) {
       if (!user?.vpnUuid || !user.xuiEmail || user.xuiInboundId == null) {
         return {
           paymentIntent: updatedIntent,
+          shouldNotifyPayment: true,
           xuiAction: "create" as const,
           xuiPayload: {
             userId: intent.userId,
@@ -293,6 +298,7 @@ export async function markPaymentIntentPaid(intentId: string, userId?: string) {
 
       return {
         paymentIntent: updatedIntent,
+        shouldNotifyPayment: true,
         xuiAction: "extend" as const,
         xuiPayload: {
           userId: intent.userId,
@@ -304,6 +310,7 @@ export async function markPaymentIntentPaid(intentId: string, userId?: string) {
     } else if (!user?.vpnUuid) {
       return {
         paymentIntent: updatedIntent,
+        shouldNotifyPayment: true,
         xuiAction: "create" as const,
         xuiPayload: {
           userId: intent.userId,
@@ -314,6 +321,7 @@ export async function markPaymentIntentPaid(intentId: string, userId?: string) {
 
     return {
       paymentIntent: updatedIntent,
+      shouldNotifyPayment: true,
       xuiAction: "none" as const
     };
   }, {
@@ -332,6 +340,17 @@ export async function markPaymentIntentPaid(intentId: string, userId?: string) {
       txResult.xuiPayload.inboundId,
       txResult.xuiPayload.durationDays
     );
+  }
+
+  if (txResult.shouldNotifyPayment) {
+    await notifyPaymentPaid({
+      email: "user" in txResult.paymentIntent ? txResult.paymentIntent.user.email : null,
+      userId: txResult.paymentIntent.userId,
+      planName: txResult.paymentIntent.plan.name,
+      amountRub: txResult.paymentIntent.amountRub,
+      landingSlug: txResult.paymentIntent.landingSlug,
+      paymentIntentId: txResult.paymentIntent.id
+    });
   }
 
   return txResult.paymentIntent;

@@ -9,26 +9,29 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "#0a0a0a",
-        card: "#141414",
-        "card-hover": "#1a1a1a",
-        accent: "#5674d6",
-        "accent-hover": "#6a86e4",
+        background: "var(--background)",
+        card: "var(--card)",
+        "card-hover": "var(--card-hover)",
+        accent: "var(--accent)",
+        "accent-hover": "var(--accent-hover)",
         text: {
-          primary: "#f5f5f5",
-          secondary: "#8a8a8a",
+          primary: "var(--text-primary)",
+          secondary: "var(--text-secondary)",
         },
-        success: "#5674d6",
-        error: "#ef4444",
-        border: "#2a2a2a",
+        success: "var(--success)",
+        error: "var(--error)",
+        border: "var(--border)",
       },
       fontFamily: {
-        sans: ["SF Mono", "JetBrains Mono", "Fira Code", "Consolas", "monospace"],
+        sans: ["var(--font-family)"],
       },
       borderRadius: {
-        lg: "6px",
-        md: "4px",
-        sm: "3px",
+        lg: "var(--border-radius)",
+        md: "calc(var(--border-radius) * 0.7)",
+        sm: "calc(var(--border-radius) * 0.5)",
+      },
+      boxShadow: {
+        DEFAULT: "var(--shadow)",
       },
       animation: {
         "fade-in": "fadeIn 0.5s ease-out",

@@ -47,6 +47,7 @@ model Plan {
   code           String          @unique @db.VarChar(64)
   name           String          @db.VarChar(120)
   description    String?         @db.VarChar(255)
+  landingSlug    String          @default("pixel-vpn") @db.VarChar(64)
   order          Int             @default(0)
   priceRub       Int
   durationDays   Int
@@ -58,6 +59,7 @@ model Plan {
   promoCodes     PromoCode[]
   promoCodeLinks PromoCodePlan[]
 
+  @@index([landingSlug, isActive, order])
   @@index([isActive, order])
 }
 
@@ -66,6 +68,7 @@ model PaymentIntent {
   userId       String
   planId       String
   promoCodeId  String?
+  landingSlug  String        @default("pixel-vpn") @db.VarChar(64)
   amountRub    Int
   provider     String        @default("yookassa") @db.VarChar(32)
   status       PaymentStatus @default(PENDING)
@@ -84,6 +87,7 @@ model PaymentIntent {
   @@index([userId, status])
   @@index([planId])
   @@index([promoCodeId])
+  @@index([landingSlug])
   @@index([createdAt])
 }
 

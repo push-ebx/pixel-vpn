@@ -7,6 +7,8 @@ RUN apt-get update -y \
   && rm -rf /var/lib/apt/lists/*
 
 RUN corepack enable
+RUN corepack prepare pnpm@9.15.9 --activate
+RUN echo "ignore-build-scripts=false" > /app/.npmrc  # на всякий случай
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/server/package.json apps/server/package.json

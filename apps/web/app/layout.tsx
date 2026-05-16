@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import "./globals.css";
 import { Toaster } from "@/components/ui/Toaster";
 import { RefCapture } from "@/components/RefCapture";
+import { ThemeProvider } from "@/lib/theme";
 import { SITE_DESCRIPTION, SITE_LOCALE, SITE_NAME, SITE_URL, absoluteUrl } from "@/lib/seo";
 
 export const metadata: Metadata = {
@@ -67,7 +68,7 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#5674d6",
-  colorScheme: "dark",
+  colorScheme: "light dark",
 };
 
 export default function RootLayout({
@@ -106,7 +107,7 @@ export default function RootLayout({
   ];
 
   return (
-    <html lang="ru">
+    <html lang="ru" suppressHydrationWarning>
       <body className="antialiased">
         <script
           type="application/ld+json"
@@ -115,8 +116,10 @@ export default function RootLayout({
         <Suspense>
           <RefCapture />
         </Suspense>
-        {children}
-        <Toaster />
+        <ThemeProvider>
+          {children}
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );

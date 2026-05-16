@@ -114,6 +114,7 @@ interface Plan {
   description: string | null;
   priceRub: number;
   durationDays: number;
+  landingSlug: string;
 }
 
 // Payment types
@@ -179,12 +180,13 @@ export async function getVless(): Promise<ApiResponse<{ vless: VlessResponse }>>
 }
 
 // Plans API
-export async function getPlans(): Promise<ApiResponse<{ plans: Plan[] }>> {
-  return fetchApi<{ plans: Plan[] }>("/api/plans");
+export async function getPlans(landingSlug?: string): Promise<ApiResponse<{ plans: Plan[] }>> {
+  const query = landingSlug ? `?landing=${encodeURIComponent(landingSlug)}` : "";
+  return fetchApi<{ plans: Plan[] }>(`/api/plans${query}`);
 }
 
 // Payments API
-export async function createPaymentIntent(input: { planId?: string; planCode?: string; promoCode?: string }): Promise<ApiResponse<{ paymentIntent: PaymentIntent }>> {
+export async function createPaymentIntent(input: { planId?: string; planCode?: string; promoCode?: string; landingSlug?: string }): Promise<ApiResponse<{ paymentIntent: PaymentIntent }>> {
   return fetchApi<{ paymentIntent: PaymentIntent }>("/api/payments/intents", {
     method: "POST",
     body: JSON.stringify(input),
@@ -255,7 +257,7 @@ export async function validatePromoCode(code: string): Promise<ApiResponse<{ val
   });
 }
 
-export async function applyPromoCode(input: { planId?: string; planCode?: string; promoCode: string }): Promise<ApiResponse<PromoCodeApply>> {
+export async function applyPromoCode(input: { planId?: string; planCode?: string; promoCode: string; landingSlug?: string }): Promise<ApiResponse<PromoCodeApply>> {
   return fetchApi<PromoCodeApply>("/api/promocodes/apply", {
     method: "POST",
     body: JSON.stringify(input),

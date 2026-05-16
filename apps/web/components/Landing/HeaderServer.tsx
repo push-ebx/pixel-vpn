@@ -67,7 +67,7 @@ export async function FooterServer() {
           </div>
 
           <nav className="flex items-center gap-4 text-[13px] font-pixel-title tracking-[0.06em] text-text-secondary">
-            <Link href="/pricing" className="hover:text-accent transition-colors">
+            <Link href="/#pricing" className="hover:text-accent transition-colors">
               тарифы
             </Link>
             {auth?.isAuthenticated ? (

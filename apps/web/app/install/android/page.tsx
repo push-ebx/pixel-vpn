@@ -3,8 +3,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Shield, ChevronLeft, ExternalLink } from "lucide-react";
-import { HeaderClient } from "@/components/Landing/HeaderClient";
-import { FooterClient } from "@/components/Landing/FooterClient";
 
 const steps = [
   {
@@ -33,20 +31,24 @@ const steps = [
 export default function AndroidInstallPage() {
   return (
     <main className="min-h-screen bg-background text-text-primary">
-      <HeaderClient />
+      {/* Simple Header without logo */}
+      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+          <Link href="/" className="text-lg font-bold text-text-primary">
+            VPN Service
+          </Link>
+          <Link
+            href="/#pricing"
+            className="flex items-center gap-1 text-sm text-text-secondary hover:text-accent transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            Тарифы
+          </Link>
+        </div>
+      </header>
 
-      <div className="pt-24 pb-12">
+      <div className="pt-8 pb-12">
         <div className="container mx-auto px-4">
-          <div className="flex items-center gap-2 mb-8">
-            <Link
-              href="/pricing"
-              className="flex items-center gap-1 text-sm text-text-secondary hover:text-accent transition-colors"
-            >
-              <ChevronLeft className="w-4 h-4" />
-              Тарифы
-            </Link>
-          </div>
-
           <div className="max-w-2xl mx-auto">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-12 h-12 rounded-lg bg-accent flex items-center justify-center">
@@ -118,7 +120,12 @@ export default function AndroidInstallPage() {
         </div>
       </div>
 
-      <FooterClient />
+      {/* Simple Footer without logo */}
+      <footer className="bg-background border-t border-border py-6">
+        <div className="container mx-auto px-4 text-center text-sm text-text-secondary">
+          <Link href="/" className="hover:text-accent transition-colors">← На главную</Link>
+        </div>
+      </footer>
     </main>
   );
 }

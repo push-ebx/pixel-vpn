@@ -52,7 +52,7 @@ const clients = [
 
 export function Clients() {
   return (
-    <section className="py-12 bg-background border-t border-border/60">
+    <section className="py-12 bg-background border-border/60">
       <div className="container mx-auto px-4">
         <div className="mb-7">
           <p className="font-pixel-title text-[13px] tracking-[0.08em] text-text-secondary mb-2">КЛИЕНТЫ</p>
@@ -71,7 +71,7 @@ export function Clients() {
                 index !== clients.length - 1 && "border-b border-border"
               )}
             >
-              <div className="w-8 h-8 border border-accent/40 bg-accent/10 flex items-center justify-center shrink-0">
+              <div className="w-8 h-8 border-accent/40 bg-accent/10 flex items-center justify-center shrink-0">
                 <client.icon className="w-4 h-4 text-accent" />
               </div>
 

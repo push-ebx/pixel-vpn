@@ -1,26 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import { Check, ArrowLeft, Tag, Loader2 } from "lucide-react";
+import { Check, Tag, Loader2 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/Card";
-import { Input } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
 import { useAuthStore } from "@/lib/auth";
 import * as api from "@/lib/api";
+import { filterPlansForLanding, type Plan } from "@/lib/plans";
 import { useRouter, useSearchParams } from "next/navigation";
-
-export interface Plan {
-  id: string;
-  code: string;
-  name: string;
-  description: string | null;
-  priceRub: number;
-  durationDays: number;
-}
 
 type PricingClientProps = {
   initialPlans: Plan[];
+  landingSlug?: string;
 };
 
 function formatDaysRu(days: number): string {
@@ -37,7 +27,7 @@ function formatDaysRu(days: number): string {
   return `${days} дней`;
 }
 
-export default function PricingClient({ initialPlans }: PricingClientProps) {
+export default function PricingClient({ initialPlans, landingSlug = "pixel-vpn" }: PricingClientProps) {
   const { user, isInitialized, checkAuth } = useAuthStore();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -136,6 +126,7 @@ export default function PricingClient({ initialPlans }: PricingClientProps) {
       const appliedPromo = validPromos[plan.id];
       const { data, error } = await api.createPaymentIntent({
         planCode: plan.code,
+        landingSlug,
         ...(appliedPromo?.code ? { promoCode: appliedPromo.code } : {}),
       });
       if (error) {
@@ -216,6 +207,7 @@ export default function PricingClient({ initialPlans }: PricingClientProps) {
     try {
       const { data, error } = await api.applyPromoCode({
         planCode: plan.code,
+        landingSlug,
         promoCode: code,
       });
 
@@ -255,7 +247,7 @@ export default function PricingClient({ initialPlans }: PricingClientProps) {
     }
   };
 
-  const plans = initialPlans.filter((p) => p.code !== "trial-3d");
+  const plans = filterPlansForLanding(initialPlans, landingSlug).filter((p) => p.code !== "trial-3d");
   const gridClass =
     plans.length <= 1
       ? "grid-cols-1"
@@ -264,19 +256,10 @@ export default function PricingClient({ initialPlans }: PricingClientProps) {
         : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3";
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card/50">
-        <div className="container mx-auto px-4 py-4">
-          <Link href="/" className="inline-flex items-center gap-2 text-text-secondary hover:text-text-primary">
-            <ArrowLeft className="w-4 h-4" />
-            На главную
-          </Link>
-        </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-12">
+    <section id="pricing" className="bg-background scroll-mt-20">
+      <div className="container mx-auto px-4 py-16">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-text-primary mb-4">Выберите свой тариф</h1>
+          <h2 className="text-4xl font-bold text-text-primary mb-4">Выберите свой тариф</h2>
           <p className="text-text-secondary max-w-xl mx-auto">
             Простые и прозрачные цены без скрытых платежей.
             Выберите подходящий план и начните пользоваться VPN прямо сейчас.
@@ -392,7 +375,7 @@ export default function PricingClient({ initialPlans }: PricingClientProps) {
         <div className="mt-12 text-center">
           <p className="text-text-secondary text-sm">Все цены указаны в рублях. Оплата через YooKassa.</p>
         </div>
-      </main>
-    </div>
+      </div>
+    </section>
   );
 }

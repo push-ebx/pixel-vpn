@@ -398,7 +398,7 @@ class TelegramBotService {
 
   private async sendPlans(chatId: number) {
     const plans = await prisma.plan.findMany({
-      where: { isActive: true },
+      where: { isActive: true, landingSlug: "pixel-vpn" },
       orderBy: [{ order: "asc" }, { priceRub: "asc" }, { durationDays: "asc" }]
     });
 
@@ -452,6 +452,7 @@ class TelegramBotService {
         data: {
           userId,
           planId: plan.id,
+          landingSlug: plan.landingSlug,
           amountRub: 0,
           provider: "free",
           status: PaymentStatus.PENDING,
@@ -477,6 +478,7 @@ class TelegramBotService {
       data: {
         userId,
         planId: plan.id,
+        landingSlug: plan.landingSlug,
         amountRub: plan.priceRub,
         provider: "yookassa",
         status: PaymentStatus.PENDING,
