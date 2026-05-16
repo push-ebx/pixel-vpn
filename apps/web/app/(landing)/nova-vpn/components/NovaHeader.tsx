@@ -66,7 +66,7 @@ export function NovaHeader() {
             </Link>
             <Link href="/register">
               <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
-                Попробовать бесплатно
+                Зарегистрироваться
               </Button>
             </Link>
           </div>
@@ -106,7 +106,7 @@ export function NovaHeader() {
                 </Link>
                 <Link href="/register">
                   <Button className="w-full justify-center bg-blue-600 hover:bg-blue-700">
-                    Попробовать бесплатно
+                    Зарегистрироваться
                   </Button>
                 </Link>
               </div>

@@ -167,10 +167,6 @@ export function NoDinoPricing({ plans: backendPlans = [] }: NoDinoPricingProps) 
             </motion.div>
           ))}
         </div>
-
-        <p className="text-center text-slate-500 mt-8">
-          Не уверены? <Link href="/register" className="text-green-500 hover:underline">Попробуйте бесплатно 1 день</Link>
-        </p>
       </div>
     </section>
   );

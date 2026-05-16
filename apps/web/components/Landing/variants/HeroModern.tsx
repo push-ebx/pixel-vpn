@@ -11,7 +11,7 @@ export function HeroModern() {
       {/* Градиентный фон */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-indigo-50" />
       <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-blue-100/50 to-transparent" />
-      
+
       {/* Декоративные круги */}
       <div className="absolute top-20 left-10 w-72 h-72 bg-blue-200/30 rounded-full blur-3xl" />
       <div className="absolute bottom-20 right-10 w-96 h-96 bg-indigo-200/30 rounded-full blur-3xl" />
@@ -32,14 +32,14 @@ export function HeroModern() {
           </h1>
 
           <p className="text-xl text-slate-600 mb-10 max-w-2xl mx-auto leading-relaxed">
-            Безопасное и стабильное подключение через Нидерланды. 
+            Безопасное и стабильное подключение через Нидерланды.
             Без лимитов трафика и сложных настроек.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
             <Link href="/#pricing">
               <Button size="lg" className="px-8 py-4 text-lg rounded-full shadow-lg shadow-blue-500/25">
-                Начать бесплатно
+                Начать
               </Button>
             </Link>
             <Link href="/#pricing">
@@ -57,8 +57,8 @@ export function HeroModern() {
               { icon: Lock, text: "Шифрование AES-256" },
               { icon: Globe, text: "Доступ из любой точки" },
             ].map((feature, i) => (
-              <div 
-                key={i} 
+              <div
+                key={i}
                 className="flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur rounded-full border border-slate-200 shadow-sm"
               >
                 <feature.icon className="w-4 h-4 text-blue-600" />

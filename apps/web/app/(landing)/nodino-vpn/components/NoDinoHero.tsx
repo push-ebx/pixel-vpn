@@ -89,7 +89,7 @@ export function NoDinoHero() {
               </div>
 
               <p className="text-sm text-slate-500 mt-4">
-                7 дней бесплатно • Отмена в любой момент
+                Отмена в любой момент
               </p>
             </motion.div>
 

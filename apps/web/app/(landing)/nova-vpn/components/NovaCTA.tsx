@@ -20,7 +20,7 @@ export function NovaCTA() {
               size="lg"
               className="px-8 py-6 text-lg bg-white text-blue-600 hover:bg-blue-50 rounded-full group"
             >
-              Начать бесплатно
+              Зарегистрироваться
               <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Button>
           </Link>

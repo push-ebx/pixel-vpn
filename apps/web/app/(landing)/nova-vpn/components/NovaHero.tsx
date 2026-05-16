@@ -10,7 +10,7 @@ export function NovaHero() {
       {/* Background gradient */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-indigo-50" />
       <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-blue-100/50 to-transparent" />
-      
+
       {/* Decorative elements */}
       <div className="absolute top-20 left-10 w-72 h-72 bg-blue-200/30 rounded-full blur-3xl" />
       <div className="absolute bottom-20 right-10 w-96 h-96 bg-indigo-200/30 rounded-full blur-3xl" />
@@ -33,18 +33,18 @@ export function NovaHero() {
           </h1>
 
           <p className="text-lg sm:text-xl text-slate-600 mb-8 max-w-2xl mx-auto leading-relaxed">
-            Nova VPN обеспечивает молниеносное соединение, военное шифрование 
+            Nova VPN обеспечивает молниеносное соединение, военное шифрование
             и доступ к любым сайтам. Никаких логов, никаких ограничений.
           </p>
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
             <Link href="/register">
-              <Button 
-                size="lg" 
+              <Button
+                size="lg"
                 className="px-8 py-6 text-lg bg-blue-600 hover:bg-blue-700 rounded-full shadow-lg shadow-blue-600/25 group"
               >
-                Начать бесплатно
+                Зарегистрироваться
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
@@ -61,7 +61,6 @@ export function NovaHero() {
           {/* Trust badges */}
           <div className="flex flex-wrap justify-center gap-6 text-sm text-slate-500">
             {[
-              "Бесплатный пробный период",
               "Отмена в любой момент",
               "Поддержка 24/7",
             ].map((item, i) => (

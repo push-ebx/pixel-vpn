@@ -6,7 +6,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Nova VPN — Быстрый и безопасный VPN для всех устройств",
-  description: "Nova VPN обеспечивает высокоскоростное подключение, военное шифрование и доступ к любым сайтам. Попробуйте бесплатно.",
+  description: "Nova VPN обеспечивает высокоскоростное подключение, военное шифрование и доступ к любым сайтам.",
 };
 
 export default function NovaVpnLayout({
